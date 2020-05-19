@@ -2,6 +2,7 @@ import numpy as np
 import logging 
 import logging as l
 import sys, os
+from game_env import GameEnv, RED, GREEN
 
 
 def setupLogging():
@@ -26,10 +27,18 @@ def setupLogging():
 def main():
     setupLogging()
 
-    l.warning('sdd')
     l.info('in sdd')
-    l.debug('in sdd')
-    l.critical('in sdd')
+
+    g = GameEnv()
+    l.info(g)
+
+    g.move(RED, 2,3)
+
+    l.info( g.print_ascii() )
+    
+
+
+
 
 
 
