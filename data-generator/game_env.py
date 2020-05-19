@@ -8,8 +8,8 @@ GREEN = np.array([0,1,0])
 RED =   np.array([0,0,1])
 
 _blank_index = 0
-_red_index = 1
-_green_index = 2
+_green_index = 1
+_red_index = 2
 
 def __create_winning_mask():
     masks = []
@@ -47,7 +47,7 @@ def __create_winning_mask():
 
     return np.stack(masks)
 
-_winning_mask = __create_winning_mask()
+_global_winning_mask = __create_winning_mask()
 
 class GameEnv():
     def __init__(self):
@@ -58,10 +58,24 @@ class GameEnv():
         self.win_masks = self.__get_winning_masks()
     
     def __get_winning_masks(self):
-        return _winning_mask.copy()
+        return _global_winning_mask.copy()
 
     def __move_exact(self, color , col_pos, col_row):
         self.board[col_row, col_pos] = color
+
+    def is_win(self,color):
+        if color[_green_index] == 1 :
+            index = _green_index
+        elif color[_red_index] == 1:
+            index = _red_index
+
+        masked = (self.board[:,:,index] * self.win_masks)
+        count = masked.sum(axis=1).sum(axis=1).max()
+
+        if count == 4:
+            return True
+        else:
+            return False
 
 
     def move(self, color , col_pos):

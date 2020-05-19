@@ -30,15 +30,22 @@ def main():
     l.info('in sdd')
 
     g = GameEnv()
-    l.info(g)
 
     g.move(RED, 2)
     g.move(GREEN, 2)
     g.move(RED, 1)
-    g.move(GREEN, 5)
+    g.move(GREEN, 4)
+
 
     l.info( g.print_ascii() )
+    l.info(g.is_win(GREEN) )
     
+    g.move(RED, 5)
+    g.move(RED, 5)
+    g.move(RED, 5)
+    g.move(RED, 5)
+    l.info( g.print_ascii() )
+    l.info(g.is_win(RED) )
 
 
 
