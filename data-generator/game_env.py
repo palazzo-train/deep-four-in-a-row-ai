@@ -11,22 +11,61 @@ _blank_index = 0
 _red_index = 1
 _green_index = 2
 
+def __create_winning_mask():
+    masks = []
+    w = np.ones( 4)
+
+    ## horizontal
+    for row in range(_n_row):
+        for col in range(_n_col - 3):
+            mask = np.zeros( [_n_row ,_n_col] )
+            mask[row,col:col+4] = w
+            masks.append(mask)
+
+    ## vertical
+    for row in range(_n_row - 3):
+        for col in range(7):
+            mask = np.zeros( [_n_row,_n_col] )
+            mask[row:row+4,col] = w
+            masks.append(mask)
+
+    ## diagonal
+    w1 = np.array( [ [ 1, 0, 0, 0] ,
+                    [ 0, 1, 0, 0]  , 
+                    [ 0, 0, 1, 0]  , 
+                    [ 0, 0, 0, 1] ] )
+    w2 = np.flip(w1, 0)
+
+    ws = [w1, w2]
+
+    for w in ws:
+        for row in range(_n_row - 3):
+            for col in range(_n_col - 3):
+                mask = np.zeros( [_n_row,_n_col] )
+                mask[row:row+4,col:col+4] = w2
+                masks.append(mask)
+
+    return np.stack(masks)
+
+_winning_mask = __create_winning_mask()
+
 class GameEnv():
-
-
     def __init__(self):
         self.board = np.zeros( [_n_row, _n_col, 3])
         self.board[:,:] = BLANK
         self.step = 0
         self.next_row_pos = np.zeros( _n_col , dtype='int')
+        self.win_masks = self.__get_winning_masks()
+    
+    def __get_winning_masks(self):
+        return _winning_mask.copy()
 
     def __move_exact(self, color , col_pos, col_row):
         self.board[col_row, col_pos] = color
 
+
     def move(self, color , col_pos):
         col_row = self.next_row_pos[col_pos]
-        print(color)
-        print(color.shape)
         self.board[col_row, col_pos] = color
         self.next_row_pos[col_pos] += 1
 
