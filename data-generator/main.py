@@ -34,18 +34,21 @@ def main():
     g.move(RED, 2)
     g.move(GREEN, 2)
     g.move(RED, 1)
-    g.move(GREEN, 4)
+    w = g.move(GREEN, 4)
 
 
     l.info( g.print_ascii() )
-    l.info(g.is_win(GREEN) )
+    # l.info(g.is_win(GREEN) )
     
     g.move(RED, 5)
     g.move(RED, 5)
-    g.move(RED, 5)
-    g.move(RED, 5)
+    w = g.move(RED, 5)
     l.info( g.print_ascii() )
-    l.info(g.is_win(RED) )
+    w = g.move(RED, 5)
+    l.info( g.print_ascii() )
+
+    l.info( g.print_ascii() )
+    # l.info(g.is_win(RED) )
 
 
 
