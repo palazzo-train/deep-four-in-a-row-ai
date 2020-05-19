@@ -50,6 +50,9 @@ def main():
     l.info( g.print_ascii() )
     # l.info(g.is_win(RED) )
 
+    print( ( g.step_trace ) )
+    print( len( g.step_trace ) )
+
 
 
 

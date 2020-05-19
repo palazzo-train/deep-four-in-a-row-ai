@@ -51,11 +51,13 @@ class GameEnv():
     def __init__(self):
         self.board = np.zeros( [_n_row, _n_col, 3])
         self.board[:,:] = BLANK
-        self.n_step = np.array( [0,0])
+        self.n_player_step = np.array( [0,0])
+        self.n_step = 0
         self.next_row_pos = np.zeros( _n_col , dtype='int')
         self.win_masks = self.__get_winning_masks()
 
         self.winner = BLANK
+        self.step_trace = []
     
     def __get_winning_masks(self):
         return _global_winning_mask.copy()
@@ -90,13 +92,18 @@ class GameEnv():
 
         index = self.__color_to_index(color)
 
-        self.n_step[index] += 1
 
-        check_win = self.__is_win(color)
-        if check_win:
+        game_won = self.__is_win(color)
+        
+        game_step = ( self.board.copy() , col_pos, color, self.n_player_step[index] , self.n_step , game_won )
+        self.step_trace.append( game_step )
+
+        self.n_player_step[index] += 1
+        self.n_step += 1
+        if game_won :
             self.winner = color
 
-        return check_win
+        return game_won 
 
     def print_ascii(self, console=True):
         print_board = np.zeros( [_n_row, _n_col] , 'U1')
