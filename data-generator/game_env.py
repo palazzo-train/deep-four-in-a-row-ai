@@ -18,9 +18,17 @@ class GameEnv():
         self.board = np.zeros( [_n_row, _n_col, 3])
         self.board[:,:] = BLANK
         self.step = 0
+        self.next_row_pos = np.zeros( _n_col , dtype='int')
 
-    def move(self, color , col_pos, col_row):
+    def __move_exact(self, color , col_pos, col_row):
         self.board[col_row, col_pos] = color
+
+    def move(self, color , col_pos):
+        col_row = self.next_row_pos[col_pos]
+        print(color)
+        print(color.shape)
+        self.board[col_row, col_pos] = color
+        self.next_row_pos[col_pos] += 1
 
     def print_ascii(self, console=True):
         print_board = np.zeros( [_n_row, _n_col] , 'U1')
@@ -28,6 +36,8 @@ class GameEnv():
         print_board[ self.board[:,:,_blank_index] == 1] = '_'
         print_board[ self.board[:,:,_red_index] == 1] = 'O'
         print_board[ self.board[:,:,_green_index] == 1] = 'X'
+
+        print_board = np.flip(print_board, 0) 
 
         lines = []
         for r in print_board:

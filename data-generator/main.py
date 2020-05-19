@@ -32,7 +32,10 @@ def main():
     g = GameEnv()
     l.info(g)
 
-    g.move(RED, 2,3)
+    g.move(RED, 2)
+    g.move(GREEN, 2)
+    g.move(RED, 1)
+    g.move(GREEN, 5)
 
     l.info( g.print_ascii() )
     
