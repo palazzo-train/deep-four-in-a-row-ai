@@ -86,7 +86,16 @@ class GameEnv():
         return index
 
     def move(self, color , col_pos):
+
+        game_won = False
+        valid_move = True
+
         col_row = self.next_row_pos[col_pos]
+
+        if col_row >= _n_row :
+            valid_move = False
+            return valid_move, game_won 
+
         self.board[col_row, col_pos] = color
         self.next_row_pos[col_pos] += 1
 
@@ -103,7 +112,7 @@ class GameEnv():
         if game_won :
             self.winner = color
 
-        return game_won 
+        return valid_move, game_won 
 
     def print_ascii(self, console=True):
         print_board = np.zeros( [_n_row, _n_col] , 'U1')

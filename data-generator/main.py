@@ -3,6 +3,7 @@ import logging
 import logging as l
 import sys, os
 from game_env import GameEnv, RED, GREEN
+from random_robot_players import RobotA
 
 
 def setupLogging():
@@ -30,6 +31,32 @@ def main():
     l.info('in sdd')
 
     g = GameEnv()
+    p_r = RobotA()
+    p_g = RobotA()
+
+    won = False
+    count = 0 
+
+    while not won:
+        valid_move, won = g.move(RED,p_r.move())
+        l.info( g.print_ascii() )
+        if won:
+            break
+
+        valid_move, won = g.move(GREEN,p_g.move())
+        l.info( g.print_ascii() )
+        if won:
+            break
+
+        count += 1
+
+        if count > 60 :
+            break
+
+    print("count {} win? {}".format(count, won))
+
+
+    return
 
     g.move(RED, 2)
     g.move(GREEN, 2)
@@ -44,7 +71,9 @@ def main():
     g.move(RED, 5)
     w = g.move(RED, 5)
     l.info( g.print_ascii() )
-    w = g.move(RED, 5)
+
+    a = RobotA()
+    w = g.move(RED, a.move() )
     l.info( g.print_ascii() )
 
     l.info( g.print_ascii() )
