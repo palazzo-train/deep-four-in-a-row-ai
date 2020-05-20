@@ -4,7 +4,7 @@ import logging as l
 import sys, os
 from game_env import GameEnv, RED, GREEN
 import random_robot_players as rp
-
+import data_preparer as dp
 
 def setupLogging():
     fileName = 'app.log'
@@ -96,6 +96,9 @@ def main():
     print('red lv  : {}'.format(p_r.name) )
     print('green lv: {}'.format(p_g.name) )
 
+    seqs = g.step_trace
+
+    dp.generate(seqs)
 
 
 

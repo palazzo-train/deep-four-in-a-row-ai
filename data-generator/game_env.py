@@ -88,9 +88,33 @@ def _m_move_test(board, next_row_pos , color , col_pos):
 
     return valid_move, game_won
 
+def board_to_ascii(board, console=True):
+    print_board = np.zeros( [_n_row, _n_col] , 'U1')
+
+    print_board[ board[:,:,_blank_index] == 1] = '_'
+    print_board[ board[:,:,_red_index] == 1] = 'R'
+    print_board[ board[:,:,_green_index] == 1] = 'O'
+
+    print_board = np.flip(print_board, 0) 
+
+    lines = []
+    for r in print_board:
+        line = ( ''.join( r ) )
+        lines.append( line )
+
+    print_line = '\n'.join(lines)
+
+    if console:
+        print_line = '\n' + print_line
+
+    return print_line
 
 class GameEnv():
+
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.board = np.zeros( [_n_row, _n_col, 3])
         self.board[:,:] = BLANK
         self.n_player_step = np.array( [0,0])
@@ -100,7 +124,7 @@ class GameEnv():
 
         self.winner = BLANK
         self.step_trace = []
-    
+
     def __get_winning_masks(self):
         return _global_winning_masks.copy()
 
@@ -146,24 +170,9 @@ class GameEnv():
         return valid_move, game_won, self.board 
 
     def print_ascii(self, console=True):
-        print_board = np.zeros( [_n_row, _n_col] , 'U1')
-
-        print_board[ self.board[:,:,_blank_index] == 1] = '_'
-        print_board[ self.board[:,:,_red_index] == 1] = 'R'
-        print_board[ self.board[:,:,_green_index] == 1] = 'O'
-
-        print_board = np.flip(print_board, 0) 
-
-        lines = []
-        for r in print_board:
-            line = ( ''.join( r ) )
-            lines.append( line )
-
-        print_line = '\n'.join(lines)
-
-        if console:
-            print_line = '\n' + print_line
-
+        print_line = board_to_ascii(self.board, console)
+        
         return print_line
+
 
 
