@@ -86,6 +86,9 @@ def _m_move_test(board, next_row_pos , color , col_pos):
 
     game_won = _m_is_win(color,board)
 
+    ## revert
+    board[col_row, col_pos] = BLANK 
+
     return valid_move, game_won
 
 def board_to_ascii(board, console=True):
@@ -133,7 +136,7 @@ class GameEnv():
 
     def test_all_moves(self, color):
         for col_pos in range(_n_col):
-            _ , game_won = _m_move_test(self.board.copy(), self.next_row_pos , color , col_pos)
+            _ , game_won = _m_move_test(self.board, self.next_row_pos , color , col_pos)
 
             if game_won:
                 return col_pos
@@ -141,13 +144,13 @@ class GameEnv():
         return -1
 
     def test_move(self, color, col_pos):
-        valid_move, game_won = _m_move_test(self.board.copy(), self.next_row_pos , color , col_pos)
+        valid_move, game_won = _m_move_test(self.board, self.next_row_pos , color , col_pos)
 
         return valid_move, game_won, self.board 
 
 
     def move(self, color , col_pos):
-        valid_move, game_won = _m_move_test(self.board.copy(), self.next_row_pos , color , col_pos)
+        valid_move, game_won = _m_move_test(self.board, self.next_row_pos , color , col_pos)
 
         if not valid_move:
             return valid_move, game_won, self.board 
