@@ -98,7 +98,7 @@ def main():
 
     seqs = g.step_trace
 
-    dp.generate(seqs)
+    dp.generate_1game_data(seqs)
 
 
 
