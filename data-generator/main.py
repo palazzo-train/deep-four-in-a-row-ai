@@ -83,7 +83,7 @@ def loop_games():
     red_robots = rp.getRobots(RED,GREEN)
     green_robots = rp.getRobots(GREEN,RED)
 
-    n_game = 200
+    n_game = 100000
     total_move = 0
 
     move_count_stat = np.zeros( n_game )
@@ -125,9 +125,17 @@ def loop_games():
         n_game, win_stat.sum(), move_count_stat.sum(), total_move, move_count_stat.sum() / n_game) )
     l.info('generating data')
     data = dp.generate_games_data(all_game_seq)
-    l.info('data shape {}'.format(data.shape))
 
+    l.info('saving data shape {}'.format(data.shape))
 
+    # np.savetxt("data.csv", data, delimiter=",")
+    with open('data.npy', 'wb') as f:
+        np.save(f, data)
+
+    # with open('test.npy', 'rb') as f:
+    #     dd = np.load(f)
+
+    l.info('saving completed')
 
 
 def test22():
