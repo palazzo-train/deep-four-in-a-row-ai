@@ -3,7 +3,7 @@ import logging
 import logging as l
 import sys, os
 from game_env import GameEnv, RED, GREEN
-from random_robot_players import RobotA
+import random_robot_players as rp
 
 
 def setupLogging():
@@ -29,7 +29,7 @@ def setupLogging():
 def manual_test():
     g = GameEnv()
 
-    moves = [ 6 , 2 , 1 , 5 , 1 , 5 , 1 , 5]
+    moves = [ 6 , 2 , 1 , 5 , 1 , 5 , 1 , 5, 1]
 
     isRed= True 
     for m in moves: 
@@ -40,9 +40,10 @@ def manual_test():
 
         sc = g.test_all_moves(color)
         valid_move, won , board = g.move(color,m)
+        postsc = g.test_all_moves(color)
         print('')
         print('')
-        print('******** isRED {} won {} , move {} suggested {}'.format( isRed, won, m, sc))
+        print('******** isRED {} won {} , move {} suggested {} {}'.format( isRed, won, m, sc, postsc ))
         print( g.print_ascii() )
 
         isRed= not isRed
@@ -50,71 +51,50 @@ def manual_test():
 def main():
     setupLogging()
 
-    l.info('in sdd')
-    # manual_test()
-    # return
-
+    l.info('start')
     g = GameEnv()
-    p_r = RobotA()
-    p_g = RobotA()
+
+    red_robots = rp.getRobots(RED,GREEN)
+    green_robots = rp.getRobots(GREEN,RED)
+
+    r_idx = np.random.choice( len(red_robots))
+    g_idx = np.random.choice( len(green_robots))
+    p_r = red_robots[r_idx]
+    p_g = green_robots[g_idx]
 
     won = False
-    count = 0 
-
+    count = 0
     while not won:
-        print('********')
-        c0 = p_r.move()
-        c = g.test_all_moves(RED)
+        print('******** count {} RED'.format(count))
+        c0 = p_r.move(g)
+        oc = g.test_all_moves(RED)
+        dc = g.test_all_moves(GREEN)
         valid_move, won , board = g.move(RED,c0)
         l.info( g.print_ascii() )
-        print('red suggested : {}, actual {}'.format(c,c0))
+        print('red suggested : offense {} defense {} , actual {}'.format(oc,dc,c0))
         print('won : {}, valid {}'.format(won, valid_move))
         if won:
             break
 
-        print('********')
-        c0 = p_g.move()
-        c = g.test_all_moves(GREEN)
+        count += 1
+        print('******** count {} GREEN'.format(count))
+        c0 = p_g.move(g)
+        oc = g.test_all_moves(GREEN)
+        dc = g.test_all_moves(RED)
         valid_move, won , board = g.move(GREEN,c0)
         l.info( g.print_ascii() )
-        print('green suggested : {}, actual {}'.format(c,c0))
+        print('green suggested : offense {} defense {} , actual {}'.format(oc,dc,c0))
         print('won : {}, valid {}'.format(won, valid_move))
         if won:
             break
 
         count += 1
 
-        if count > 60 :
+        if count > 43 :
             break
 
-    print("count {} win? {}".format(count, won))
-
-
-    return
-
-    g.move(RED, 2)
-    g.move(GREEN, 2)
-    g.move(RED, 1)
-    w = g.move(GREEN, 4)
-
-
-    l.info( g.print_ascii() )
-    # l.info(g.is_win(GREEN) )
-    
-    g.move(RED, 5)
-    g.move(RED, 5)
-    w = g.move(RED, 5)
-    l.info( g.print_ascii() )
-
-    a = RobotA()
-    w = g.move(RED, a.move() )
-    l.info( g.print_ascii() )
-
-    l.info( g.print_ascii() )
-    # l.info(g.is_win(RED) )
-
-    print( ( g.step_trace ) )
-    print( len( g.step_trace ) )
+    print('red lv  : {}'.format(p_r.name) )
+    print('green lv: {}'.format(p_g.name) )
 
 
 

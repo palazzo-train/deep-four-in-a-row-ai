@@ -107,11 +107,9 @@ class GameEnv():
     def __move_exact(self, color , col_pos, col_row):
         self.board[col_row, col_pos] = color
 
-
     def test_all_moves(self, color):
         for col_pos in range(_n_col):
             _ , game_won = _m_move_test(self.board.copy(), self.next_row_pos , color , col_pos)
-            print('kkkkkkk test    col {}  won {} color {}'.format( col_pos , game_won, color))
 
             if game_won:
                 return col_pos
