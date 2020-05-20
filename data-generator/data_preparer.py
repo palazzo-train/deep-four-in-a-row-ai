@@ -47,7 +47,12 @@ def generate_1game_data(game_seq):
     ### assign score
     max_score = 100
     data[:,-1] = np.arange( start_score, max_score, (max_score)/count)
-    data[start_index::2,-1] = data[start_index::2,-1] * -1
+
+    ## if someone won, then someone loss, negative the score for the losser
+    ## if no one won, both get positive score
+    if game_won :
+        data[start_index::2,-1] = data[start_index::2,-1] * -1
+
     data[-1,-1] = max_score 
 
     return data
