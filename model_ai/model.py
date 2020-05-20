@@ -74,7 +74,8 @@ def train_model():
 
 
 
-    n_example = 1200000
+    # n_example = 1200000
+    n_example = 12000
 
     l.info('total size of data {}'.format(data.shape))
     l.info('shuffling')
@@ -88,7 +89,9 @@ def train_model():
     dataset.shuffle(4096)
 
     l.info('ready to fit')
-    history = model.fit(dataset, epochs=1)
+    csv_logger = tf.keras.callbacks.CSVLogger('./save_model/training.log')
+
+    history = model.fit(dataset, epochs=10, callbacks=[csv_logger])
 
     l.info('saving model')
 

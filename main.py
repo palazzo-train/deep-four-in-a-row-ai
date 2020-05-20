@@ -28,18 +28,19 @@ def setupLogging():
 
 
 
-def test_gen1():
-    gm.loop_games(200)
+def generate_data():
+    n_example = 2000000
+    # n_example = 1000
+    gm.loop_games(n_example)
 
-
-def test1():
+def training():
     model = m.train_model()
 
 def main():
     setupLogging()
 
     l.info('start')
-    test1()
+    generate_data()
 
 
 if __name__ == "__main__":

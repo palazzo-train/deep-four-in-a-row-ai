@@ -34,6 +34,50 @@ def play_game(g, red_player , green_player):
         active_idx = (( active_idx + 1 )% 2 )
     return won , move_count, player 
 
+def test_load_data():
+    with open('data/data.npz', 'rb') as f:
+        dd = np.load(f)
+        data_train = dd['data_train']
+        data_dev = dd['data_dev']
+        data_test = dd['data_test']
+        win_stat = dd['win_stat']
+        move_count_stat = dd['move_count_stat']
+        winner_level_stat = dd['winner_level_stat']
+
+    print(data_train.shape)
+    print(data_dev.shape)
+    print(data_test.shape)
+    print(win_stat.shape)
+    print(move_count_stat.shape)
+    print(winner_level_stat.shape)
+
+def _create_data(data, win_stat, move_count_stat, winner_level_stat):
+    l.info('saving data shape {}'.format(data.shape))
+
+    np.random.shuffle(data)
+
+    n = data.shape[0]
+
+    train_end = int(n * 0.86)
+    dev_end = int( n * ( 0.86 + 0.07 ) )
+
+    data_train = data[0:train_end]
+    data_dev = data[train_end:dev_end]
+    data_test = data[dev_end:]
+
+    l.info('saving data ')
+    with open('data/data.npz', 'wb') as f:
+        np.savez(f, data_train=data_train, 
+        data_dev = data_dev,
+        data_test = data_test ,
+        win_stat=win_stat, move_count_stat=move_count_stat, winner_level_stat=winner_level_stat)
+
+    # with open('data_stats.npz', 'rb') as f:
+    #     dd = np.load(f)
+    #     ddd = dd['win_stat']
+
+    l.info('saving completed')
+
 def loop_games(n_game=200):
     l.info('start')
     g = GameEnv()
@@ -83,21 +127,8 @@ def loop_games(n_game=200):
     l.info('generating data')
     data = dp.generate_games_data(all_game_seq)
 
-    l.info('saving data shape {}'.format(data.shape))
+    _create_data(data, win_stat, move_count_stat, winner_level_stat)
 
-    # np.savetxt("data.csv", data, delimiter=",")
-    with open('data/data.npy', 'wb') as f:
-        np.save(f, data)
-
-    l.info('saving data stats')
-    with open('data/data_stats.npz', 'wb') as f:
-        np.savez(f, win_stat=win_stat, move_count_stat=move_count_stat, winner_level_stat=winner_level_stat)
-
-    # with open('data_stats.npz', 'rb') as f:
-    #     dd = np.load(f)
-    #     ddd = dd['win_stat']
-
-    l.info('saving completed')
 
 def manual_test():
     g = GameEnv()
