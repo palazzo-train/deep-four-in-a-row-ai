@@ -69,12 +69,13 @@ def play_game(g, red_player , green_player):
             break
 
         move_count += 1
-        active_idx = (( active_idx + 1 )% 2 )
 
         if move_count >= 42 :
             break
 
-    return won , move_count
+        active_idx = (( active_idx + 1 )% 2 )
+
+    return won , move_count, player 
 
 def loop_games():
     l.info('start')
@@ -83,8 +84,12 @@ def loop_games():
     red_robots = rp.getRobots(RED,GREEN)
     green_robots = rp.getRobots(GREEN,RED)
 
-    n_game = 1000
+    n_game = 200
     total_move = 0
+
+    move_count_stat = np.zeros( n_game )
+    win_stat = np.zeros( n_game )
+    winner_level_stat = np.zeros( n_game )
 
     won_count = 0
     for gi in range(n_game):
@@ -94,7 +99,11 @@ def loop_games():
         red_player = red_robots[r_idx]
         green_player = green_robots[g_idx]
 
-        won, move_count = play_game(g, red_player , green_player)
+        won, move_count , winner = play_game(g, red_player , green_player)
+
+        move_count_stat[gi] = move_count
+        win_stat[gi] = won
+        winner_level_stat[gi] = winner.smart_level
 
         won_count += ( 1 if won else 0 )
         total_move += move_count
@@ -110,7 +119,7 @@ def loop_games():
         #     break
 
     
-    l.info('Total {} games played. {} won. average step per game {}'.format(n_game, won_count, total_move / n_game) )
+    l.info('Total {} games played. {} won. average step per game {}'.format(n_game, win_stat.sum(), move_count_stat.sum() / n_game) )
 
 
 
