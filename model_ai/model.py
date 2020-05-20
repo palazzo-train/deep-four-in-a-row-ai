@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 import tensorflow.keras.layers as layers
 import logging as l
@@ -53,5 +54,48 @@ def create_model():
                 loss=tf.keras.losses.MeanSquaredError(),
                 metrics=[ 'mse'] )
 
+
+    return model
+
+def train_model():
+
+    ToCreate = False 
+
+    if ToCreate:
+        model = create_model()
+    else:
+        model = tf.keras.models.load_model( "./save_model/model1.h5")
+
+    model.summary(print_fn=l.info)
+
+    l.info('loading data file')
+    with open('data/data2/data.npy', 'rb') as f:
+        data = np.load(f)
+
+
+
+    n_example = 1200000
+
+    l.info('total size of data {}'.format(data.shape))
+    l.info('shuffling')
+    x = data[:,0:-1]
+    y = data[:,-1]
+    np.random.shuffle(data)
+    l.info('converting to tf dataset')
+    dataset = tf.data.Dataset.from_tensor_slices((x[0:n_example], y[0:n_example]))
+    dataset = dataset.batch(32)
+    l.info('dataset shuffle')
+    dataset.shuffle(4096)
+
+    l.info('ready to fit')
+    history = model.fit(dataset, epochs=1)
+
+    l.info('saving model')
+
+    tf.keras.models.save_model( model, "./save_model/model1.h5", overwrite=True, include_optimizer=True, signatures=None, options=None)
+
+    # history = model.fit(x, y, batch_size=64, epochs=1, validation_data=(x_val, y_val))
+
+    l.info('\nhistory dict: {}'.format(history.history))
 
     return model

@@ -39,17 +39,18 @@ def generate_1game_data(game_seq):
     n_features = board_size + color_size + col_move_size + score_size
     data = np.zeros( [ count, n_features])
 
+    winner_start_score = 0.02
+    max_score = 1.0
     ### even number
     if count % 2 == 0 : 
         start_index = 0
         start_score = 0
     else:
         start_index = 1
-        start_score = 2
+        start_score = winner_start_score 
 
     boards = []
     colors = []
-
 
     index = 0
     for row in game_seq:
@@ -67,7 +68,6 @@ def generate_1game_data(game_seq):
     data[:,:-1] = np.hstack([boards, col_moves, colors])
 
     ### assign score
-    max_score = 100
     data[:,-1] = np.arange( start_score, max_score, (max_score)/count)
 
     ## if someone won, then someone loss, negative the score for the losser
