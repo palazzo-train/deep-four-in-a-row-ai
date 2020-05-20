@@ -83,8 +83,10 @@ def loop_games():
     red_robots = rp.getRobots(RED,GREEN)
     green_robots = rp.getRobots(GREEN,RED)
 
-    n_game = 100
+    n_game = 1000
+    total_move = 0
 
+    won_count = 0
     for gi in range(n_game):
         g.reset()
         r_idx = np.random.choice( len(red_robots))
@@ -94,13 +96,21 @@ def loop_games():
 
         won, move_count = play_game(g, red_player , green_player)
 
-        print('game [{}] move count [{}] player levels [{}] vs [{}]'.format( gi , move_count , red_player.name , green_player.name ))
+        won_count += ( 1 if won else 0 )
+        total_move += move_count
 
-        if move_count <= 7:
-            print('****')
-            print(g.print_ascii())
-            break
+        if gi % 100 == 1:
+            # l.info('game [{}] move count [{}] player levels [{}] vs [{}]'.format( gi , move_count , red_player.name , green_player.name ))
+            l.info('Total {} games played. {} won. average step per game {}'.format(gi, won_count, total_move / gi ) )
 
+        # if move_count <= 6:
+        #     print('****')
+        #     print(g.print_ascii())
+        #     dp.game_seq_study(g.step_trace)
+        #     break
+
+    
+    l.info('Total {} games played. {} won. average step per game {}'.format(n_game, won_count, total_move / n_game) )
 
 
 

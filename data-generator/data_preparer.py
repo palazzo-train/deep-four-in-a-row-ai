@@ -3,6 +3,19 @@ import numpy as np
 import game_env as g
 
 
+def game_seq_study(game_seq):
+    l.info('study')
+
+    step = 1
+    for row in game_seq:
+        board , col_pos, color, n_player_step , n_step , game_won  = row
+
+        print('step {} color {}'.format(step,color))
+        print(g.board_to_ascii(board))
+
+        step += 1
+
+
 def generate_1game_data(game_seq):
     l.info('test')
 
