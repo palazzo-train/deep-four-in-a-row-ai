@@ -83,7 +83,7 @@ def loop_games():
     red_robots = rp.getRobots(RED,GREEN)
     green_robots = rp.getRobots(GREEN,RED)
 
-    n_game = 100000
+    n_game = 100
     total_move = 0
 
     move_count_stat = np.zeros( n_game )
@@ -132,8 +132,13 @@ def loop_games():
     with open('data.npy', 'wb') as f:
         np.save(f, data)
 
-    # with open('test.npy', 'rb') as f:
+    l.info('saving data stats')
+    with open('data_stats.npz', 'wb') as f:
+        np.savez(f, win_stat=win_stat, move_count_stat=move_count_stat, winner_level_stat=winner_level_stat)
+
+    # with open('data_stats.npz', 'rb') as f:
     #     dd = np.load(f)
+    #     ddd = dd['win_stat']
 
     l.info('saving completed')
 
