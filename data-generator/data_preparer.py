@@ -16,9 +16,18 @@ def game_seq_study(game_seq):
         step += 1
 
 
-def generate_1game_data(game_seq):
-    l.info('test')
+def generate_games_data(list_game_seq):
+    data = []
+    for seq in list_game_seq: 
+        d = generate_1game_data(seq)
 
+        data.append(d)
+
+    data = np.vstack(data)
+
+    return data
+
+def generate_1game_data(game_seq):
     count = len(game_seq)
 
     board_size = 6 * 7 * 3

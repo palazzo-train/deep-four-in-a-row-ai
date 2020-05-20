@@ -55,7 +55,7 @@ def play_game(g, red_player , green_player):
     players = [ red_player , green_player ]
     player_color = [ RED, GREEN ]
 
-    move_count = 1
+    move_count = 0
     while not won:
         player = players[ active_idx ]
         color = player_color[active_idx]
@@ -65,16 +65,15 @@ def play_game(g, red_player , green_player):
             c0 = player.move(g)
             valid_move, won , board = g.move( color ,c0)
 
+        move_count += 1
+
         if won:
             break
-
-        move_count += 1
 
         if move_count >= 42 :
             break
 
         active_idx = (( active_idx + 1 )% 2 )
-
     return won , move_count, player 
 
 def loop_games():
@@ -91,6 +90,7 @@ def loop_games():
     win_stat = np.zeros( n_game )
     winner_level_stat = np.zeros( n_game )
 
+    all_game_seq = []
     won_count = 0
     for gi in range(n_game):
         g.reset()
@@ -118,8 +118,15 @@ def loop_games():
         #     dp.game_seq_study(g.step_trace)
         #     break
 
+        all_game_seq.append( g.step_trace )
+
     
-    l.info('Total {} games played. {} won. average step per game {}'.format(n_game, win_stat.sum(), move_count_stat.sum() / n_game) )
+    l.info('Total {} games played. {} won. total step {}=={}. average step per game {}'.format(
+        n_game, win_stat.sum(), move_count_stat.sum(), total_move, move_count_stat.sum() / n_game) )
+    l.info('generating data')
+    data = dp.generate_games_data(all_game_seq)
+    l.info('data shape {}'.format(data.shape))
+
 
 
 
