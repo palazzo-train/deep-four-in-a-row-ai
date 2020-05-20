@@ -29,7 +29,7 @@ def setupLogging():
 
 
 def generate_data():
-    n_example = 2000000
+    n_example = 200000
     # n_example = 1000
     gm.loop_games(n_example)
 
