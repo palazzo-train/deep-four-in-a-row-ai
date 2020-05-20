@@ -48,10 +48,63 @@ def manual_test():
 
         isRed= not isRed
 
-def main():
-    setupLogging()
 
+def play_game(g, red_player , green_player):
+    won = False
+    active_idx = np.random.choice( 2 )
+    players = [ red_player , green_player ]
+    player_color = [ RED, GREEN ]
+
+    move_count = 1
+    while not won:
+        player = players[ active_idx ]
+        color = player_color[active_idx]
+
+        valid_move = False
+        while not valid_move:
+            c0 = player.move(g)
+            valid_move, won , board = g.move( color ,c0)
+
+        if won:
+            break
+
+        move_count += 1
+        active_idx = (( active_idx + 1 )% 2 )
+
+        if move_count >= 42 :
+            break
+
+    return won , move_count
+
+def loop_games():
     l.info('start')
+    g = GameEnv()
+
+    red_robots = rp.getRobots(RED,GREEN)
+    green_robots = rp.getRobots(GREEN,RED)
+
+    n_game = 100
+
+    for gi in range(n_game):
+        g.reset()
+        r_idx = np.random.choice( len(red_robots))
+        g_idx = np.random.choice( len(green_robots))
+        red_player = red_robots[r_idx]
+        green_player = green_robots[g_idx]
+
+        won, move_count = play_game(g, red_player , green_player)
+
+        print('game [{}] move count [{}] player levels [{}] vs [{}]'.format( gi , move_count , red_player.name , green_player.name ))
+
+        if move_count <= 7:
+            print('****')
+            print(g.print_ascii())
+            break
+
+
+
+
+def test22():
     g = GameEnv()
 
     red_robots = rp.getRobots(RED,GREEN)
@@ -103,6 +156,11 @@ def main():
 
 
 
+def main():
+    setupLogging()
+
+    l.info('start')
+    loop_games()
 
 if __name__ == "__main__":
     main()

@@ -57,7 +57,7 @@ def getRobots(mycolor, opponent_color):
 
 
     for p in ps:
-        for level in range(3):
+        for level in [ 1, 2 ]:
             r = RobotSmartRandom(p, mycolor, opponent_color, level )
             robots.append(r)
 
