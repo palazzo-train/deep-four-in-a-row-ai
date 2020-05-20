@@ -1,5 +1,6 @@
 import numpy as np 
 
+### constants
 _n_row = 6
 _n_col = 7
 
@@ -11,7 +12,7 @@ _green_index = 0
 _red_index = 1
 _blank_index = 2
 
-def __create_winning_mask():
+def __m_create_winning_mask():
     masks = []
     w = np.ones( 4)
 
@@ -43,9 +44,50 @@ def __create_winning_mask():
                 mask[row:row+4,col:col+4] = w
                 masks.append(mask)
 
+    ### size [ n , _n_row , _n_col ]
     return np.stack(masks)
 
-_global_winning_mask = __create_winning_mask()
+### init global winning mask
+_global_winning_masks = __m_create_winning_mask()
+
+
+
+def _m_is_win(color, board):
+    index = _m_color_to_index(color)
+
+    masked = (board[:,:,index] * _global_winning_masks)
+    count = masked.sum(axis=1).sum(axis=1).max()
+
+    if count == 4:
+        return True
+    else:
+        return False
+
+
+def _m_color_to_index(color):
+    if color[_green_index] == 1 :
+        index = _green_index
+    elif color[_red_index] == 1:
+        index = _red_index
+
+    return index
+
+def _m_move_test(board, next_row_pos , color , col_pos):
+    game_won = False
+    valid_move = False 
+
+    col_row = next_row_pos[col_pos]
+
+    if col_row >= _n_row :
+        return valid_move, game_won 
+
+    valid_move = True
+    board[col_row, col_pos] = color
+
+    game_won = _m_is_win(color,board)
+
+    return valid_move, game_won
+
 
 class GameEnv():
     def __init__(self):
@@ -60,59 +102,50 @@ class GameEnv():
         self.step_trace = []
     
     def __get_winning_masks(self):
-        return _global_winning_mask.copy()
+        return _global_winning_masks.copy()
 
     def __move_exact(self, color , col_pos, col_row):
         self.board[col_row, col_pos] = color
 
-    def __is_win(self,color):
-        index = self.__color_to_index(color)
 
-        masked = (self.board[:,:,index] * self.win_masks)
-        count = masked.sum(axis=1).sum(axis=1).max()
+    def test_all_moves(self, color):
+        for col_pos in range(_n_col):
+            _ , game_won = _m_move_test(self.board.copy(), self.next_row_pos , color , col_pos)
+            print('kkkkkkk test    col {}  won {} color {}'.format( col_pos , game_won, color))
 
-        if count == 4:
-            return True
-        else:
-            return False
+            if game_won:
+                return col_pos
 
+        return -1
 
-    def __color_to_index(self, color):
-        if color[_green_index] == 1 :
-            index = _green_index
-        elif color[_red_index] == 1:
-            index = _red_index
+    def test_move(self, color, col_pos):
+        valid_move, game_won = _m_move_test(self.board.copy(), self.next_row_pos , color , col_pos)
 
-        return index
+        return valid_move, game_won, self.board 
+
 
     def move(self, color , col_pos):
+        valid_move, game_won = _m_move_test(self.board.copy(), self.next_row_pos , color , col_pos)
 
-        game_won = False
-        valid_move = True
+        if not valid_move:
+            return valid_move, game_won, self.board 
 
+        ## commit move
         col_row = self.next_row_pos[col_pos]
-
-        if col_row >= _n_row :
-            valid_move = False
-            return valid_move, game_won 
-
         self.board[col_row, col_pos] = color
         self.next_row_pos[col_pos] += 1
 
-        index = self.__color_to_index(color)
-
-
-        game_won = self.__is_win(color)
-        
+        index = _m_color_to_index(color)
         game_step = ( self.board.copy() , col_pos, color, self.n_player_step[index] , self.n_step , game_won )
-        self.step_trace.append( game_step )
 
+        self.step_trace.append( game_step )
         self.n_player_step[index] += 1
         self.n_step += 1
+
         if game_won :
             self.winner = color
 
-        return valid_move, game_won 
+        return valid_move, game_won, self.board 
 
     def print_ascii(self, console=True):
         print_board = np.zeros( [_n_row, _n_col] , 'U1')

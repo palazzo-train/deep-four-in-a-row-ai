@@ -25,10 +25,34 @@ def setupLogging():
 
     rootLogger.setLevel(logging.DEBUG)
 
+
+def manual_test():
+    g = GameEnv()
+
+    moves = [ 6 , 2 , 1 , 5 , 1 , 5 , 1 , 5]
+
+    isRed= True 
+    for m in moves: 
+        if isRed: 
+            color = RED
+        else:
+            color = GREEN
+
+        sc = g.test_all_moves(color)
+        valid_move, won , board = g.move(color,m)
+        print('')
+        print('')
+        print('******** isRED {} won {} , move {} suggested {}'.format( isRed, won, m, sc))
+        print( g.print_ascii() )
+
+        isRed= not isRed
+
 def main():
     setupLogging()
 
     l.info('in sdd')
+    # manual_test()
+    # return
 
     g = GameEnv()
     p_r = RobotA()
@@ -38,13 +62,23 @@ def main():
     count = 0 
 
     while not won:
-        valid_move, won = g.move(RED,p_r.move())
+        print('********')
+        c0 = p_r.move()
+        c = g.test_all_moves(RED)
+        valid_move, won , board = g.move(RED,c0)
         l.info( g.print_ascii() )
+        print('red suggested : {}, actual {}'.format(c,c0))
+        print('won : {}, valid {}'.format(won, valid_move))
         if won:
             break
 
-        valid_move, won = g.move(GREEN,p_g.move())
+        print('********')
+        c0 = p_g.move()
+        c = g.test_all_moves(GREEN)
+        valid_move, won , board = g.move(GREEN,c0)
         l.info( g.print_ascii() )
+        print('green suggested : {}, actual {}'.format(c,c0))
+        print('won : {}, valid {}'.format(won, valid_move))
         if won:
             break
 
