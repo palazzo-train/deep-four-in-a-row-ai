@@ -30,11 +30,11 @@ def get_dataset(n_example=120000):
     np.random.shuffle(data_test)
 
     all_data = []
-    for d in [ data_train, data_dev , data_test] :
+    for name, d in [ ( 'training set' , data_train) , ( 'dev set' , data_dev ) , ( 'test set' , data_test )] :
         x = d[:,0:-1]
         y = d[:,-1]
 
-        l.info('converting to tf dataset')
+        l.info('converting to tf dataset : {}'.format(name))
         dataset = tf.data.Dataset.from_tensor_slices((x[0:n_example], y[0:n_example]))
         dataset = dataset.batch(32)
         l.info('dataset shuffle')
@@ -65,13 +65,14 @@ def train_model():
     model = _get_model(create_new=True)
 
     n_example = 120000
+    epochs = 30
 
     dataset_train , dataset_dev , dataset_test  = get_dataset(n_example)
 
     l.info('ready to fit')
     csv_logger = tf.keras.callbacks.CSVLogger('./save_model/training.log')
 
-    history = model.fit(dataset_train, epochs=10, validation_data=dataset_dev, callbacks=[csv_logger])
+    history = model.fit(dataset_train, epochs=epochs, validation_data=dataset_dev, callbacks=[csv_logger])
 
     l.info('saving model')
 
@@ -79,5 +80,11 @@ def train_model():
 
     # history = model.fit(x, y, batch_size=64, epochs=1, validation_data=(x_val, y_val))
     l.info('\nhistory dict: {}'.format(history.history))
+
+    # Evaluate the model on the test data using `evaluate`
+    l.info('Evaluate on test data')
+    results = model.evaluate(dataset_test, batch_size=128)
+    l.info('result :', results)
+
 
     return model
