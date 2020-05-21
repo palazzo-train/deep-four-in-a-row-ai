@@ -3,7 +3,7 @@ import logging
 import logging as l
 import sys, os
 import data_generator.game_manager as gm
-import model_ai.model as m
+import model_ai.trainer as trainer 
 import tensorflow as tf
 
 def setupLogging():
@@ -34,7 +34,7 @@ def generate_data():
     gm.loop_games(n_example)
 
 def training():
-    model = m.train_model()
+    model = trainer.train_model()
 
 def main():
     setupLogging()
