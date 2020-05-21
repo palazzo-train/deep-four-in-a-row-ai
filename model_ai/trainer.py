@@ -83,8 +83,7 @@ def train_model():
 
     # Evaluate the model on the test data using `evaluate`
     l.info('Evaluate on test data')
-    results = model.evaluate(dataset_test, batch_size=128)
-    l.info('result :', results)
-
+    results = model.evaluate(dataset_test)
+    l.info('result {}'.format(results))
 
     return model
