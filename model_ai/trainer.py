@@ -51,7 +51,7 @@ def get_dataset(n_example=120000):
 
 
 def _get_model(create_new=False):
-    if ToCreate:
+    if create_new:
         model = m.create_model()
     else:
         model = tf.keras.models.load_model( "./save_model/model1.h5")
