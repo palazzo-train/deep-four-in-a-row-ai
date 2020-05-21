@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+import datetime
+import pandas as pd
 import logging as l
 from . import model as m
 
@@ -50,37 +52,78 @@ def get_dataset(n_example=120000):
 
 
 
-def _get_model(create_new=False):
+def _get_model(save_model_path, create_new=False):
     if create_new:
+        l.info('***** create new model *******')
         model = m.create_model()
     else:
-        model = tf.keras.models.load_model( "./save_model/model1.h5")
+        l.info('************************************')
+        l.info('***** resume model *******')
+        l.info('***** loading {} *******'.format( save_model_path ) )
+        l.info('************************************')
+        model = tf.keras.models.load_model( save_model_path ) 
 
     model.summary(print_fn=l.info)
 
     return model
 
-def train_model():
 
-    model = _get_model(create_new=True)
+def _get_callback(csv_logger, checkpoint_path):
+    csv_logger = tf.keras.callbacks.CSVLogger( csv_logger )
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                 save_weights_only=True,
+                                                 verbose=1)
+    
+    cb = [ csv_logger , cp_callback ]
+
+    return cb
+
+
+def _save_history(history_folder, history, run_time):
+
+    x = run_time
+
+    history_path = '{}/history_{}.csv'.format(history_folder, x.strftime( r'%Y%m%d_%H_%M_%S'))
+    l.info('saving history to {}'.format(history_path))
+
+    df = pd.DataFrame( history)
+    df['date'] = x.strftime( r'%Y-%b-%d' )
+    df['time'] = x.strftime( r'%H:%M:%S' )
+    df.to_csv(history_path)
+
+def train_model():
+    working_folder = 'working'
+    base_folder = 'save_model'
+
+    run_time  = datetime.datetime.now()
+
+    csv_logger = './{}/{}/training_{}.log'.format(base_folder, working_folder, run_time.strftime( r'%Y%m%d_%H_%M_%S'))
+    history_folder= './{}/{}/'.format(base_folder, working_folder)
+    checkpoint_path = './{}/{}/checkpoint/checkpoint'.format(base_folder, working_folder)
+    save_model_path = './{}/{}/savemodel/my_model'.format(base_folder, working_folder)
+
+    model = _get_model(save_model_path, create_new=False)
 
     # n_example = 1200000
     n_example = 5111000
-    epochs = 10 
+    # n_example = 100 
+    epochs = 60
+    # epochs = 2
 
+    l.info('loading dataset . n_example {}'.format(n_example))
     dataset_train , dataset_dev , dataset_test  = get_dataset(n_example)
 
     l.info('ready to fit. n_example {}'.format(n_example))
-    csv_logger = tf.keras.callbacks.CSVLogger('./save_model/training.log')
+    cb = _get_callback(csv_logger, checkpoint_path)
 
-    history = model.fit(dataset_train, epochs=epochs, validation_data=dataset_dev, callbacks=[csv_logger])
+    history = model.fit(dataset_train, epochs=epochs, validation_data=dataset_dev, callbacks=cb)
 
     l.info('saving model')
-
-    tf.keras.models.save_model( model, "./save_model/model1.h5", overwrite=True, include_optimizer=True, signatures=None, options=None)
+    tf.keras.models.save_model( model, save_model_path )
 
     # history = model.fit(x, y, batch_size=64, epochs=1, validation_data=(x_val, y_val))
-    l.info('\nhistory dict: {}'.format(history.history))
+    l.info('saving history')
+    _save_history(history_folder, history.history, run_time)
 
     # Evaluate the model on the test data using `evaluate`
     l.info('Evaluate on test data')
