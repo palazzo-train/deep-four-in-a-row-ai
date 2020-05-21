@@ -64,12 +64,13 @@ def train_model():
 
     model = _get_model(create_new=True)
 
-    n_example = 120000
-    epochs = 30
+    # n_example = 1200000
+    n_example = 5111000
+    epochs = 10 
 
     dataset_train , dataset_dev , dataset_test  = get_dataset(n_example)
 
-    l.info('ready to fit')
+    l.info('ready to fit. n_example {}'.format(n_example))
     csv_logger = tf.keras.callbacks.CSVLogger('./save_model/training.log')
 
     history = model.fit(dataset_train, epochs=epochs, validation_data=dataset_dev, callbacks=[csv_logger])
