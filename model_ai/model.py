@@ -41,14 +41,14 @@ def create_model():
     x0 = layers.BatchNormalization(name='bn_2')(x0)
 
     x0 = layers.Flatten(name='flat_board')(x0)
-    x0 = layers.Dense( 16,  activation='relu', name='board_encoder' )(x0)
+    x0 = layers.Dense( 128,  activation='relu', name='board_encoder' )(x0)
 
     x = layers.concatenate( [ x0, x1 ] , name='combin_input' )
 
-    x = layers.Dense( 32 , activation='relu', name='dense_1')(x)
+    x = layers.Dense( 256 , activation='relu', name='dense_1')(x)
     x = layers.Dropout(0.4 , name='dropout_1')(x)
 
-    x = layers.Dense( 8 , activation='relu', name='dense_2')(x)
+    x = layers.Dense( 16 , activation='relu', name='dense_2')(x)
     x = layers.Dropout(0.4 , name='dropout_2')(x)
 
     out = layers.Dense( 1 , activation='linear', name='dense_out')(x)
