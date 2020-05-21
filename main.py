@@ -40,7 +40,8 @@ def main():
     setupLogging()
 
     l.info('start')
-    generate_data()
+    # generate_data()
+    training()
 
 
 if __name__ == "__main__":
