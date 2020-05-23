@@ -25,7 +25,7 @@ class MyCustomRobotEvalCallback(tf.keras.callbacks.Callback):
             the_file.write('{},{},{},{},{},{}\n'.format(epoch, logs['loss'], logs['val_loss'], 
                     win_rate,draw_rate ,loss_rate) )
 
-        l.info('end robot evaluation')
+        l.info('end robot evaluation (win, draw, loss) : {} , {} , {}'.format(win_rate, draw_rate, loss_rate))
 
 
 def get_numpy_data():

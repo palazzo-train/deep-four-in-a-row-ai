@@ -212,7 +212,7 @@ def robot_evaluate(red_ai , green_ai):
     red_robots = [ red_ai ]
     green_robots = green_opponent
 
-    n_game = 100
+    n_game = gc.EVAL_ROBOT_EVAL_BY_MODE_GAME_NUM /2 
     _, win_stat , _, _, winner_names = loop_games_between_robots(
                 red_robots, green_robots, n_game, save_game_to_file=False, with_last_step=False, display_step=100)
 
