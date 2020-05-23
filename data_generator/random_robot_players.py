@@ -4,12 +4,23 @@ import numpy as np
 class RobotRandom():
     def __init__(self,p):
         self.proba = p
-
-        self.proba = self.proba  / self.proba.sum()
+        self.org_proba = self.proba  / self.proba.sum()
+        self.proba = self.org_proba.copy()
+        self.last_invalid_move = np.zeros( 7 )
     
     def move(self, game):
         col = np.random.choice( 7 , p=self.proba )
         return col 
+    
+    def move_valid_feedback(self, prev_move_col, valid_move):
+        if valid_move:
+            # reset
+            self.last_invalid_move = np.zeros( 7 )
+            self.proba = self.org_proba.copy()
+        else:
+            self.proba[prev_move_col] = 0
+            self.proba = self.proba  / self.proba.sum()
+            self.last_invalid_move[prev_move_col] = 1
 
 class RobotSmartRandom(RobotRandom):
     def __init__(self,p,mycolor, opponent_color, smart_level):

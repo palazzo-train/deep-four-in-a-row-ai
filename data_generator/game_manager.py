@@ -21,14 +21,15 @@ def play_game(g, red_player , green_player):
         valid_move = False
         while not valid_move:
             c0 = player.move(g)
-            valid_move, won , board = g.move( color ,c0)
+            valid_move, game_end, won , board = g.move( color ,c0)
+            player.move_valid_feedback(c0, valid_move)
 
         move_count += 1
 
         if won:
             break
 
-        if move_count >= 42 :
+        if move_count >= 42 or game_end :
             break
 
         active_idx = (( active_idx + 1 )% 2 )
@@ -75,7 +76,7 @@ def _save_data(data_train, data_dev, data_test, win_stat, move_count_stat, winne
 def _create_data(data, win_stat, move_count_stat, winner_level_stat):
     l.info('saving data shape {}'.format(data.shape))
 
-    np.random.shuffle(data)
+    # np.random.shuffle(data)
 
     n = data.shape[0]
 

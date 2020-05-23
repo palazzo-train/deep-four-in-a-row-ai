@@ -10,6 +10,7 @@ class Robot():
         self.saved_model_path = saved_model_path
         self.name = 'AI Robot'
         self.index = 0
+        self.last_invalid_move = np.zeros( 7 )
 
         self.__load_model__()
     
@@ -24,6 +25,13 @@ class Robot():
         one_hots[np.arange(col_size),a] = 1
 
         return one_hots
+
+    def move_valid_feedback(self, prev_move_col, valid_move):
+        if valid_move:
+            # reset
+            self.last_invalid_move = np.zeros( 7 )
+        else:
+            self.last_invalid_move[prev_move_col] = 1
 
     def move(self, game):
         board = game.board.copy()

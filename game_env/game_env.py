@@ -182,9 +182,10 @@ class GameEnv():
 
     def move(self, color , col_pos):
         valid_move, game_won = _m_move_test(self.board, self.next_row_pos , color , col_pos)
+        game_end = False
 
         if not valid_move:
-            return valid_move, game_won, self.board 
+            return valid_move, game_end, game_won, self.board 
 
         ### save the before move board in history
         self.step_history[self.n_step,0:_board_size] = self.board.reshape(-1)
@@ -203,10 +204,15 @@ class GameEnv():
             ## add list history
             self.step_history[self.n_step,0:_board_size] = self.board.reshape(-1)
             self.winner = color
+            game_end = True
+
+        if self.n_step == 42:
+            game_end = True
+
 
         self.game_won = game_won
 
-        return valid_move, game_won, self.board 
+        return valid_move, game_end, game_won, self.board 
 
     def print_ascii(self, console=True):
         print_line = board_to_ascii(self.board, console)
