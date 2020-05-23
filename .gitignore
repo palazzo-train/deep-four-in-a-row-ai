@@ -133,3 +133,4 @@ dmypy.json
 data/
 save_model/
 project_data/
+temp_run/

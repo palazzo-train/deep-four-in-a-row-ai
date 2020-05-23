@@ -1,5 +1,5 @@
 ###  running mode
-MODE_RESUME_TRAINING = False
+MODE_RESUME_TRAINING = True 
 
 
 ### environment
@@ -13,4 +13,4 @@ C_save_model_current_folder = 'working'
 HP_Batch = 256
 HP_EPOCH = 60
 HP_NUM_TRAINING_DATA = 5111000
-HP_DATA_SHUFFLE_SIZE = 4096
+HP_DATA_SHUFFLE_SIZE = 32768

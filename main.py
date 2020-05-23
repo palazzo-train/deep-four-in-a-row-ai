@@ -6,6 +6,8 @@ import data_generator.game_manager as gm
 import model_ai.trainer as trainer 
 import tensorflow as tf
 
+import global_config as gc
+
 def setupLogging():
     fileName = 'app.log'
     logPath = '.'
@@ -33,11 +35,13 @@ def test_robot():
     import data_generator.random_robot_players as rp
     import data_generator.game_manager  as gm
 
-    path = r'D:\my_project\repo\deep-four-in-a-row-ai\save_model\working\savemodel\my_model'
-    print(path)
+    working_folder = gc.C_save_model_current_folder 
+    base_folder = gc.C_save_model_base_folder
+    save_model_path = './{}/{}/savemodel/my_model'.format(base_folder, working_folder)
+    print(save_model_path)
 
-    r = robot.Robot(g.RED, g.GREEN, path)
-    orobots = rp.getRobots(g.GREEN, g.RED, start_level = 2)
+    r = robot.Robot(g.RED, g.GREEN, save_model_path)
+    orobots = rp.getRobots(g.GREEN, g.RED, at_level = 2)
     game = g.GameEnv()
 
     for g_player in orobots:
@@ -47,8 +51,8 @@ def test_robot():
         break
 
 def generate_data():
-    # n_example = 200
-    n_example = 170000
+    n_example = 200
+    # n_example = 170000
     gm.loop_games(n_example)
 
 def training():
@@ -58,9 +62,9 @@ def main():
     setupLogging()
 
     l.info('start')
-    generate_data()
+    # generate_data()
     # training()
-    # test_robot()
+    test_robot()
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import logging as l
-from scipy import special
 
 class Robot():
     def __init__(self, mycolor, opponent_color, saved_model_path):
@@ -9,8 +8,9 @@ class Robot():
         self.opponent_color = opponent_color
         self.saved_model_path = saved_model_path
         self.name = 'AI Robot'
-        self.index = 0
-        self.last_invalid_move = np.zeros( 7 )
+        self.next_move_index = 0
+        self.move_order_list = None
+        self.is_new_move = True
 
         self.__load_model__()
     
@@ -29,48 +29,42 @@ class Robot():
     def move_valid_feedback(self, prev_move_col, valid_move):
         if valid_move:
             # reset
-            self.last_invalid_move = np.zeros( 7 )
+            self.is_new_move = True
+            self.next_move_index = 0
         else:
-            self.last_invalid_move[prev_move_col] = 1
+            self.is_new_move = False
+            self.next_move_index = self.next_move_index + 1
+
 
     def move(self, game):
-        board = game.board.copy()
-        board = board.reshape(-1)
+        
+        ### if new move, ask model
+        if self.is_new_move: 
+            board = game.board.copy()
+            board = board.reshape(-1)
 
-        self.index = ( self.index + 1 ) % 7
-
-        col = self.index
-
-        # print(x)
-        # print(x.shape)
-
-        col_pos = self.__get_all_moves()
-        boards = np.broadcast_to(board, (7, board.shape[0])) 
-        colors = np.broadcast_to(self.my_color, (7, self.my_color.shape[0])) 
-        all_moves_x = np.concatenate( [ boards , col_pos , colors ] , axis=1)
-        score = self.model.predict(all_moves_x)
-        print('robot move {}'.format(score))
-
-        ss = special.softmax(score , axis = 1)
-        print('')
-        print(ss)
-
-        return col 
+            # make 7 predict at 1 time
+            col_pos = self.__get_all_moves()
+            boards = np.broadcast_to(board, (7, board.shape[0])) 
+            colors = np.broadcast_to(self.my_color, (7, self.my_color.shape[0])) 
+            all_moves_x = np.concatenate( [ boards , col_pos , colors ] , axis=1)
+            score = self.model.predict(all_moves_x)
+            
+            score = score.reshape(-1)
+            # -score for des order
+            self.move_order_list = np.argsort(-score)
+            
+            print('model')
+            print(score)
+            print('move order')
+            print(self.move_order_list)
 
 
-        # if self.smart_level >= 1:
-        #     ## defensive 
-        #     sc = game.test_all_moves(self.opponent_color)
+        ## model was consulted, but the last move is not valid
+        ## next move_index will be moved if it is invalid 
+        print('cur index {}'.format(self.next_move_index ))
+        col = self.move_order_list[self.next_move_index]
+            
+        return col
 
-        #     if sc != -1 :
-        #         return sc
 
-        # if self.smart_level >= 2:
-        #     ## offensive
-        #     sc = game.test_all_moves(self.my_color)
-
-        #     if sc != -1 :
-        #         return sc
-
-        # col = np.random.choice( 7 , p=self.proba )
-        # return col 
