@@ -40,7 +40,7 @@ def test_robot():
     save_model_path = './{}/{}/savemodel/my_model'.format(base_folder, working_folder)
 
     print(save_model_path)
-    robot_win_rate = gm.robot_evaluate(save_model_path)
+    robot_win_rate = gm.robot_evaluate_by_path(save_model_path)
 
     print(robot_win_rate)
 

@@ -8,7 +8,9 @@ import model_ai.robot as robot
 import global_config as gc
 
 
+
 def play_game(g, red_player , green_player):
+
     red_player.reset()
     green_player.reset()
     won = False
@@ -183,26 +185,41 @@ def manual_test():
 
         isRed= not isRed
 
-def robot_evaluate(save_model_path):
-    import game_env.game_env as g
-    import data_generator.random_robot_players as rp
-    import data_generator.game_manager  as gm
 
-    # working_folder = gc.C_save_model_current_folder 
-    # base_folder = gc.C_save_model_base_folder
-    # save_model_path = './{}/{}/savemodel/my_model'.format(base_folder, working_folder)
-    # print(save_model_path)
 
-    r = robot.Robot(g.RED, g.GREEN, save_model_path)
-    green_robots = rp.getRobots(g.GREEN, g.RED, at_level = 2)
-    red_robots = [r]
+def robot_evaluate_by_path(save_model_path):
+    r = robot.Robot(RED, GREEN, save_model_path)
+    g = robot.Robot(GREEN, RED, save_model_path)
+
+    robot_evaluate( r , g )
+
+def robot_evaluate_by_model(model):
+    pass
+
+def robot_evaluate(red_ai , green_ai):
+    l.info(' evaluate ai robot')
+
+    green_opponent= rp.getRobots(GREEN, RED, at_level = 2)
+    red_opponent= rp.getRobots(RED, GREEN, at_level = 2)
+
+    ## first as red
+    red_robots = [ red_ai ]
+    green_robots = green_opponent
 
     n_game = 100
-
-    all_game_history, win_stat, move_count_stat, winner_level_stat , winner_names = gm.loop_games_between_robots(
+    _, _, _, _, winner_names = loop_games_between_robots(
                 red_robots, green_robots, n_game, save_game_to_file=False, with_last_step=False, display_step=100)
 
-    n_robot_win = ( winner_names == bytes(r.name, 'utf-8') ).sum()
-    robot_win_rate = n_robot_win / n_game
+    n_as_red_win = ( winner_names == bytes(red_ai.name, 'utf-8') ).sum()
+
+    ## first as green 
+    red_robots = red_opponent
+    green_robots = [ green_ai ]
+    _, _, _, _, winner_names = loop_games_between_robots(
+                red_robots, green_robots, n_game, save_game_to_file=False, with_last_step=False, display_step=100)
+
+    n_as_green_win = ( winner_names == bytes(green_ai.name, 'utf-8') ).sum()
+
+    robot_win_rate = (( n_as_red_win + n_as_green_win ) / (2 * n_game) )
 
     return robot_win_rate

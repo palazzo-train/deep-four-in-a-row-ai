@@ -5,6 +5,7 @@ import logging as l
 
 class ModelRobot():
     def __init__(self, mycolor, opponent_color, model):
+
         self.my_color = mycolor
         self.opponent_color = opponent_color
         self.name = 'AI Robot'
@@ -67,12 +68,14 @@ class ModelRobot():
 
 class Robot(ModelRobot):
     def __init__(self, mycolor, opponent_color, saved_model_path):
+        super(Robot, self).__init__(mycolor, opponent_color, None)
+
         self.my_color = mycolor
         self.opponent_color = opponent_color
         self.saved_model_path = saved_model_path
         self.__load_model__()
 
-        super(Robot, self).__init__(mycolor, opponent_color, self.model)
+
 
     def __load_model__(self):
         self.model = tf.keras.models.load_model( self.saved_model_path ) 
