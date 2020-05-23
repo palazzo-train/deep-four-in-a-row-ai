@@ -84,12 +84,12 @@ def _create_data(data, win_stat, move_count_stat, winner_level_stat):
 
 
 
-def loop_games(n_game=200, save_game_to_file=True):
+def loop_games(n_game=200, save_game_to_file=True, with_last_step=False):
     l.info('start')
     red_robots = rp.getRobots(RED,GREEN)
     green_robots = rp.getRobots(GREEN,RED)
 
-    all_game_history, win_stat, move_count_stat, winner_level_stat = loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file)
+    all_game_history, win_stat, move_count_stat, winner_level_stat = loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file, with_last_step)
 
     l.info(' vstacking data')
     data = np.vstack( all_game_history )
@@ -100,7 +100,7 @@ def loop_games(n_game=200, save_game_to_file=True):
 
     return data
 
-def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file=True):
+def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file=True, with_last_step=False):
     g = GameEnv()
 
     total_move = 0
@@ -135,7 +135,7 @@ def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_fil
         #     print('****')
         #     print(g.print_ascii())
         #     break
-        all_game_history.append( g.get_history() )
+        all_game_history.append( g.get_history(with_last_step) )
 
     
     l.info('Total {} games played. {} won. total step {}=={}. average step per game {}'.format(
