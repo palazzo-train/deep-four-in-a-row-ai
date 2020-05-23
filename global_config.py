@@ -10,9 +10,9 @@ C_save_model_current_folder = 'working'
 
 
 ### Hyperparameters
-HP_Batch = 521
+HP_Batch = 4096 
 # HP_EPOCH = 60
 HP_EPOCH = 10
 HP_NUM_TRAINING_DATA = 5111000
-HP_NUM_TRAINING_DATA = 100
+# HP_NUM_TRAINING_DATA = 100
 HP_DATA_SHUFFLE_SIZE = 32768
