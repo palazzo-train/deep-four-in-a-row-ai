@@ -6,7 +6,26 @@ import pandas as pd
 import logging as l
 from . import model as m
 import global_config as gc
+import data_generator.game_manager  as gm
 
+
+class MyCustomRobotEvalCallback(tf.keras.callbacks.Callback):
+    def __init__(self,path, model):
+        self.model = model
+        self.path = path
+
+        with open(path, 'w') as the_file:
+            the_file.write('epoch,loss,val_loss,win_rate,draw_rate,loss_rate\n')
+
+    def on_epoch_end(self, epoch, logs=None):
+        l.info('start robot evaluation')
+        win_rate, draw_rate, loss_rate = gm.robot_evaluate_by_model(self.model)
+
+        with open(self.path, 'a') as the_file:
+            the_file.write('{},{},{},{},{},{}\n'.format(epoch, logs['loss'], logs['val_loss'], 
+                    win_rate,draw_rate ,loss_rate) )
+
+        l.info('end robot evaluation')
 
 
 def get_numpy_data():
@@ -78,13 +97,14 @@ def _get_model(save_model_path, create_new=False):
     return model
 
 
-def _get_callback(csv_logger, checkpoint_path):
+def _get_callback(csv_logger, checkpoint_path, robot_eval_logger, model):
+    robot_eval = MyCustomRobotEvalCallback(robot_eval_logger, model)
     csv_logger = tf.keras.callbacks.CSVLogger( csv_logger )
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                                  save_weights_only=True,
                                                  verbose=1)
     
-    cb = [ csv_logger , cp_callback ]
+    cb = [ csv_logger , cp_callback , robot_eval]
 
     return cb
 
@@ -108,6 +128,7 @@ def train_model():
     run_time  = datetime.datetime.now()
 
     csv_logger = './{}/{}/training_{}.log'.format(base_folder, working_folder, run_time.strftime( r'%Y%m%d_%H_%M_%S'))
+    robot_eval_logger = './{}/{}/training_robot_{}.log'.format(base_folder, working_folder, run_time.strftime( r'%Y%m%d_%H_%M_%S'))
     history_folder= './{}/{}/'.format(base_folder, working_folder)
     checkpoint_path = './{}/{}/checkpoint/checkpoint'.format(base_folder, working_folder)
     save_model_path = './{}/{}/savemodel/my_model'.format(base_folder, working_folder)
@@ -125,7 +146,7 @@ def train_model():
     dataset_train , dataset_dev , dataset_test  = get_dataset(n_example)
 
     l.info('ready to fit. n_example {}'.format(n_example))
-    cb = _get_callback(csv_logger, checkpoint_path)
+    cb = _get_callback(csv_logger, checkpoint_path, robot_eval_logger, model)
 
     history = model.fit(dataset_train, epochs=epochs, validation_data=dataset_dev, callbacks=cb)
 

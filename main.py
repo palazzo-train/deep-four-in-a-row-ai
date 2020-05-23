@@ -57,8 +57,8 @@ def main():
 
     l.info('start')
     # generate_data()
-    # training()
-    test_robot()
+    training()
+    # test_robot()
 
 
 if __name__ == "__main__":

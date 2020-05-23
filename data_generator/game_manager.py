@@ -193,10 +193,14 @@ def robot_evaluate_by_path(save_model_path):
 
     win_rate, draw_rate, loss_rate = robot_evaluate( r , g )
 
-    return win_rate, win_stat
+    return win_rate, draw_rate, loss_rate 
 
 def robot_evaluate_by_model(model):
-    pass
+    r = robot.ModelRobot(RED, GREEN, model)
+    g = robot.ModelRobot(GREEN, RED, model)
+
+    win_rate, draw_rate, loss_rate = robot_evaluate( r , g )
+    return win_rate, draw_rate, loss_rate 
 
 def robot_evaluate(red_ai , green_ai):
     l.info(' evaluate ai robot')
@@ -224,8 +228,8 @@ def robot_evaluate(red_ai , green_ai):
     n_as_green_win = ( winner_names == bytes(green_ai.name, 'utf-8') ).sum()
     n_as_green_draw = n_game - win_stat.sum()
 
-    robot_win_rate = (( n_as_red_win + n_as_green_win ) / (2 * n_game) )
+    win_rate = (( n_as_red_win + n_as_green_win ) / (2 * n_game) )
     draw_rate = (( n_as_red_draw + n_as_green_draw ) / (2 * n_game) )
-    loss_rate = 1 - robot_win_rate - draw_rate
+    loss_rate = 1 - win_rate - draw_rate
 
     return win_rate, draw_rate, loss_rate 
