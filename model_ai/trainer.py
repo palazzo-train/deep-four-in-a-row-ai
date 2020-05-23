@@ -152,8 +152,7 @@ def train_model():
 
     l.info('saving model')
     tf.keras.models.save_model( model, save_model_path )
-    if gc.MODE_RESUME_TRAINING:
-        model.save_weights(checkpoint_path)
+    model.save_weights(checkpoint_path)
 
     l.info('saving history')
     _save_history(history_folder, history.history, run_time)
