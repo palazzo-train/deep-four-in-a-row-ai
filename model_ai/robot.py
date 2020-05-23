@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import logging as l
+import game_env.game_env as ge
 
 
 class ModelRobot():
@@ -24,7 +25,7 @@ class ModelRobot():
 
 
     def __get_all_moves(self):
-        col_size = 7
+        col_size = ge.NUM_COL
         a = np.arange(col_size)
         one_hots = np.zeros((col_size, a.max()+1))
         one_hots[np.arange(col_size),a] = 1
@@ -49,8 +50,8 @@ class ModelRobot():
 
             # make 7 predict at 1 time
             col_pos = self.__get_all_moves()
-            boards = np.broadcast_to(board, (7, board.shape[0])) 
-            colors = np.broadcast_to(self.my_color, (7, self.my_color.shape[0])) 
+            boards = np.broadcast_to(board, (ge.NUM_COL , board.shape[0])) 
+            colors = np.broadcast_to(self.my_color, (ge.NUM_COL , self.my_color.shape[0])) 
             all_moves_x = np.concatenate( [ boards , col_pos , colors ] , axis=1)
             score = self.model.predict(all_moves_x)
             

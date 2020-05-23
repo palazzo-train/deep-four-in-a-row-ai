@@ -1,9 +1,10 @@
 import numpy as np
+import game_env.game_env as ge
 
 
 class RobotRandom():
     def __init__(self,p):
-        self.proba = p
+        self.proba = p[0:ge.NUM_COL].copy()
         self.org_proba = self.proba  / self.proba.sum()
         self.reset()
     
@@ -11,12 +12,12 @@ class RobotRandom():
         self.reset_move()
 
     def reset_move(self):
-        self.last_invalid_move = np.zeros( 7 )
+        self.last_invalid_move = np.zeros( ge.NUM_COL)
         self.proba = self.org_proba.copy()
 
 
     def move(self, game):
-        col = np.random.choice( 7 , p=self.proba )
+        col = np.random.choice( ge.NUM_COL , p=self.proba )
         return col 
     
     def move_valid_feedback(self, prev_move_col, valid_move):
@@ -51,7 +52,7 @@ class RobotSmartRandom(RobotRandom):
             if sc != -1 :
                 return sc
 
-        col = np.random.choice( 7 , p=self.proba )
+        col = np.random.choice( ge.NUM_COL , p=self.proba )
         return col 
 
 
@@ -64,7 +65,7 @@ def getRobots(mycolor, opponent_color, at_level = -1):
     ps.append( p )
     p = np.array( [ 1 , 1, 1, 1, 3  ,3 , 3 ] )
     ps.append( p )
-    p = np.array( [ 7 , 6, 4, 4, 4  ,6 , 7 ] )
+    p = np.array( [ 7.1 , 5.9, 4, 4, 4  ,5.9 , 7.1 ] )
     ps.append( p )
     p = np.array( [ 3 , 3, 3, 1, 1  ,1 , 1 ] )
     ps.append( p )

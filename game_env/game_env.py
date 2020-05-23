@@ -3,9 +3,12 @@ import numpy as np
 ### constants
 _n_row = 6
 _n_col = 7
+_n_slot_state = 3
+_n_in_a_row = 4
 
-_board_size = _n_row * _n_col * 3
-_history_step_size = _board_size + 7 + 3 + 1
+
+_board_size = _n_row * _n_col * _n_slot_state 
+_history_step_size = _board_size + _n_col + _n_slot_state + 1
 
 GREEN = np.array([1,0,0])
 RED =   np.array([0,1,0])
@@ -14,6 +17,11 @@ BLANK = np.array([0,0,1])
 _green_index = 0
 _red_index = 1
 _blank_index = 2
+
+NUM_COL = _n_col
+NUM_ROW = _n_row
+NUM_COLOR_STATE = _n_slot_state
+NUM_IN_A_ROW = _n_in_a_row
 
 def __m_create_winning_mask():
     masks = []
@@ -28,7 +36,7 @@ def __m_create_winning_mask():
 
     ## vertical
     for row in range(_n_row - 3):
-        for col in range(7):
+        for col in range(_n_col):
             mask = np.zeros( [_n_row,_n_col] )
             mask[row:row+4,col] = w
             masks.append(mask)
@@ -174,7 +182,7 @@ class GameEnv():
             return self.step_history[0:self.n_step]
 
     def __add_history(self, col_pos_index, color):
-        col_pos_onehot = np.zeros( 7 )
+        col_pos_onehot = np.zeros( _n_col )
         col_pos_onehot[col_pos_index] = 1
 
         x = np.concatenate( [ col_pos_onehot , color ])
@@ -264,10 +272,9 @@ def show_data_step_ascii(board, col_pos, color , score):
 
     print( board_to_ascii(board) )
 
-    cc_mask = col_pos * np.arange(7)
+    cc_mask = col_pos * np.arange(_n_col)
     col_i = int(np.sum(cc_mask))
 
-    # print( col_ascii[ col_pos * np.arange(7 )).sum() ] )
     print(col_ascii[col_i])
     print( 'col_pos: {}'.format( col_pos ))
     print( 'color : {}  -> {}'.format( cc, color ))
@@ -280,9 +287,9 @@ def print_game_history_ascii( game_history ):
         working_step = game_history
         
     for step in working_step :
-        board = step[0:_board_size].reshape(6,7,3)
-        col_pos = step[_board_size:_board_size+7]
-        color = step[_board_size+7:_board_size+7+3]
+        board = step[0:_board_size].reshape(_n_row,_n_col, _n_slot_state)
+        col_pos = step[_board_size:_board_size+_n_col]
+        color = step[_board_size+_n_col:_board_size+_n_col+ _n_slot_state]
         score = step[-1]
         show_data_step_ascii(board, col_pos, color , score )
             

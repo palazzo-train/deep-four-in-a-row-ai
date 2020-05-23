@@ -104,7 +104,9 @@ def _get_callback(csv_logger, checkpoint_path, robot_eval_logger, model):
                                                  save_weights_only=True,
                                                  verbose=1)
     
-    cb = [ csv_logger , cp_callback , robot_eval]
+    cb = [ csv_logger , cp_callback ]
+    if gc.MODE_ENABLE_MODEL_ROBOT_EVULATION :
+        cb = cb + [ robot_eval]
 
     return cb
 

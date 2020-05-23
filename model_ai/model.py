@@ -3,6 +3,8 @@ import tensorflow as tf
 import tensorflow.keras.layers as layers
 import logging as l
 
+import game_env.game_env as ge
+
 # class MyModel(tf.keras.Model):
 #     def __init__(self):
 #         super(MyModel, self).__init__()
@@ -19,10 +21,9 @@ import logging as l
 # model = MyModel()
 
 def create_model():
-    board_size = 6 * 7 * 3
-    color_size = 3
-    col_move_size = 7
-    # col_moves = np.zeros( [count, 7 ] )
+    board_size = ge.NUM_ROW * ge.NUM_COL * ge.NUM_COLOR_STATE
+    color_size = ge.NUM_COLOR_STATE 
+    col_move_size = ge.NUM_COL 
 
     ## 136
     n_features = board_size + color_size + col_move_size  
@@ -31,26 +32,26 @@ def create_model():
 
     inputs = tf.keras.Input(shape=(n_features,), name='input')
     x0 = layers.Lambda( lambda x : x[:,0:board_size] , name='board_input')(inputs)
-    x0 = layers.Reshape([6,7,3] , name='board_shape')(x0)
+    x0 = layers.Reshape([ge.NUM_ROW ,ge.NUM_COL,3] , name='board_shape')(x0)
 
     x1 = layers.Lambda( lambda x : x[:,board_size:]  , name='other_input')(inputs)
 
-    x0 = layers.Conv2D(filters=8,kernel_size=[3,3], activation='relu', name='conv2d_1')(x0)
+    x0 = layers.Conv2D(filters=32,kernel_size=[3,3], activation='relu', name='conv2d_1')(x0)
     x0 = layers.BatchNormalization(name='bn_1')(x0)
 
-    x0 = layers.Conv2D(filters=16,kernel_size=[3,3], activation='relu', name='conv2d_2')(x0)
+    x0 = layers.Conv2D(filters=64,kernel_size=[3,3], activation='relu', name='conv2d_2')(x0)
     x0 = layers.BatchNormalization(name='bn_2')(x0)
 
     x0 = layers.Flatten(name='flat_board')(x0)
-    x0 = layers.Dense( 128,  activation='relu', name='board_encoder' )(x0)
+    x0 = layers.Dense( 256,  activation='relu', name='board_encoder' )(x0)
 
     x = layers.concatenate( [ x0, x1 ] , name='combin_input' )
 
-    x = layers.Dense( 256 , activation='relu', name='dense_1')(x)
-    x = layers.Dropout(0.4 , name='dropout_1')(x)
+    x = layers.Dense( 512, activation='relu', name='dense_1')(x)
+    x = layers.Dropout(0.5 , name='dropout_1')(x)
 
-    x = layers.Dense( 16 , activation='relu', name='dense_2')(x)
-    x = layers.Dropout(0.4 , name='dropout_2')(x)
+    x = layers.Dense( 128, activation='relu', name='dense_2')(x)
+    x = layers.Dropout(0.5 , name='dropout_2')(x)
 
     out = layers.Dense( 1 , activation='linear', name='dense_out')(x)
 

@@ -85,8 +85,8 @@ def _create_data(data, win_stat, move_count_stat, winner_level_stat):
 
     n = data.shape[0]
 
-    train_end = int(n * 0.86)
-    dev_end = int( n * ( 0.86 + 0.07 ) )
+    train_end = int(n * gc.DATA_TRAINING_SET_RATIO ) 
+    dev_end = int( n * ( gc.DATA_TRAINING_SET_RATIO + gc.DATA_DEV_SET_RATIO ) )
 
     data_train = data[0:train_end]
     data_dev = data[train_end:dev_end]
