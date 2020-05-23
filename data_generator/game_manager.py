@@ -4,10 +4,13 @@ import logging as l
 import sys, os
 from game_env.game_env import GameEnv, RED, GREEN
 from . import random_robot_players as rp
+import model_ai.robot as robot 
 import global_config as gc
 
 
 def play_game(g, red_player , green_player):
+    red_player.reset()
+    green_player.reset()
     won = False
     active_idx = np.random.choice( 2 )
     players = [ red_player , green_player ]
@@ -97,7 +100,8 @@ def loop_games(n_game=200, save_game_to_file=True, with_last_step=False):
     red_robots = rp.getRobots(RED,GREEN)
     green_robots = rp.getRobots(GREEN,RED)
 
-    all_game_history, win_stat, move_count_stat, winner_level_stat = loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file, with_last_step)
+    all_game_history, win_stat, move_count_stat, winner_level_stat , _ = loop_games_between_robots(
+                red_robots, green_robots, n_game, save_game_to_file, with_last_step)
 
     l.info(' vstacking data')
     data = np.vstack( all_game_history )
@@ -108,7 +112,7 @@ def loop_games(n_game=200, save_game_to_file=True, with_last_step=False):
 
     return data
 
-def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file=True, with_last_step=False):
+def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file=True, with_last_step=False, display_step=100):
     g = GameEnv()
 
     total_move = 0
@@ -116,6 +120,7 @@ def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_fil
     move_count_stat = np.zeros( n_game )
     win_stat = np.zeros( n_game )
     winner_level_stat = np.zeros( n_game )
+    winner_names = np.chararray( n_game , 16)
 
     all_game_history = []
     won_count = 0
@@ -130,14 +135,16 @@ def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_fil
 
         move_count_stat[gi] = move_count
         win_stat[gi] = won
+
         winner_level_stat[gi] = winner.smart_level
+        winner_names[gi] = winner.name
 
         won_count += ( 1 if won else 0 )
         total_move += move_count
 
-        if gi % 100 == 1:
+        if gi % display_step == 0:
             # l.info('game [{}] move count [{}] player levels [{}] vs [{}]'.format( gi , move_count , red_player.name , green_player.name ))
-            l.info('Total {} games played. {} won. average step per game {}'.format(gi, won_count, total_move / gi ) )
+            l.info('Total {} games played. {} won. average step per game {}'.format(gi, won_count, total_move / (gi+1) ) )
 
         # if move_count <= 6:
         #     print('****')
@@ -149,7 +156,7 @@ def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_fil
     l.info('Total {} games played. {} won. total step {}=={}. average step per game {}'.format(
         n_game, win_stat.sum(), move_count_stat.sum(), total_move, move_count_stat.sum() / n_game) )
 
-    return all_game_history, win_stat, move_count_stat, winner_level_stat , 
+    return all_game_history, win_stat, move_count_stat, winner_level_stat , winner_names
 
 
 
@@ -175,3 +182,27 @@ def manual_test():
         print( g.print_ascii() )
 
         isRed= not isRed
+
+def robot_evaluate(save_model_path):
+    import game_env.game_env as g
+    import data_generator.random_robot_players as rp
+    import data_generator.game_manager  as gm
+
+    # working_folder = gc.C_save_model_current_folder 
+    # base_folder = gc.C_save_model_base_folder
+    # save_model_path = './{}/{}/savemodel/my_model'.format(base_folder, working_folder)
+    # print(save_model_path)
+
+    r = robot.Robot(g.RED, g.GREEN, save_model_path)
+    green_robots = rp.getRobots(g.GREEN, g.RED, at_level = 2)
+    red_robots = [r]
+
+    n_game = 100
+
+    all_game_history, win_stat, move_count_stat, winner_level_stat , winner_names = gm.loop_games_between_robots(
+                red_robots, green_robots, n_game, save_game_to_file=False, with_last_step=False, display_step=100)
+
+    n_robot_win = ( winner_names == bytes(r.name, 'utf-8') ).sum()
+    robot_win_rate = n_robot_win / n_game
+
+    return robot_win_rate

@@ -38,17 +38,11 @@ def test_robot():
     working_folder = gc.C_save_model_current_folder 
     base_folder = gc.C_save_model_base_folder
     save_model_path = './{}/{}/savemodel/my_model'.format(base_folder, working_folder)
+
     print(save_model_path)
+    robot_win_rate = gm.robot_evaluate(save_model_path)
 
-    r = robot.Robot(g.RED, g.GREEN, save_model_path)
-    orobots = rp.getRobots(g.GREEN, g.RED, at_level = 2)
-    game = g.GameEnv()
-
-    for g_player in orobots:
-        won, move_count , winner = gm.play_game(game, r , g_player)
-
-        print((won, move_count, winner.name ))
-        break
+    print(robot_win_rate)
 
 def generate_data():
     n_example = 200

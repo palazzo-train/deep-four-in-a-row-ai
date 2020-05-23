@@ -2,21 +2,25 @@ import tensorflow as tf
 import numpy as np
 import logging as l
 
-class Robot():
-    def __init__(self, mycolor, opponent_color, saved_model_path):
+
+class ModelRobot():
+    def __init__(self, mycolor, opponent_color, model):
         self.my_color = mycolor
         self.opponent_color = opponent_color
-        self.saved_model_path = saved_model_path
         self.name = 'AI Robot'
-        self.next_move_index = 0
         self.move_order_list = None
-        self.is_new_move = True
+        self.smart_level = 1000
+        self.reset()
 
-        self.__load_model__()
+        self.model = model
     
-    def __load_model__(self):
-        self.model = tf.keras.models.load_model( self.saved_model_path ) 
-        self.model.summary(print_fn=l.info)
+    def reset(self):
+        self.__reset_move()
+
+    def __reset_move(self):
+        self.is_new_move = True
+        self.next_move_index = 0
+
 
     def __get_all_moves(self):
         col_size = 7
@@ -29,8 +33,7 @@ class Robot():
     def move_valid_feedback(self, prev_move_col, valid_move):
         if valid_move:
             # reset
-            self.is_new_move = True
-            self.next_move_index = 0
+            self.__reset_move()
         else:
             self.is_new_move = False
             self.next_move_index = self.next_move_index + 1
@@ -53,18 +56,24 @@ class Robot():
             score = score.reshape(-1)
             # -score for des order
             self.move_order_list = np.argsort(-score)
-            
-            print('model')
-            print(score)
-            print('move order')
-            print(self.move_order_list)
 
 
         ## model was consulted, but the last move is not valid
         ## next move_index will be moved if it is invalid 
-        print('cur index {}'.format(self.next_move_index ))
         col = self.move_order_list[self.next_move_index]
             
         return col
 
 
+class Robot(ModelRobot):
+    def __init__(self, mycolor, opponent_color, saved_model_path):
+        self.my_color = mycolor
+        self.opponent_color = opponent_color
+        self.saved_model_path = saved_model_path
+        self.__load_model__()
+
+        super(Robot, self).__init__(mycolor, opponent_color, self.model)
+
+    def __load_model__(self):
+        self.model = tf.keras.models.load_model( self.saved_model_path ) 
+        self.model.summary(print_fn=l.info)
