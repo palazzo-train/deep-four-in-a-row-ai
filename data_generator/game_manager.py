@@ -191,7 +191,9 @@ def robot_evaluate_by_path(save_model_path):
     r = robot.Robot(RED, GREEN, save_model_path)
     g = robot.Robot(GREEN, RED, save_model_path)
 
-    robot_evaluate( r , g )
+    win_rate, draw_rate, loss_rate = robot_evaluate( r , g )
+
+    return win_rate, win_stat
 
 def robot_evaluate_by_model(model):
     pass
@@ -207,10 +209,11 @@ def robot_evaluate(red_ai , green_ai):
     green_robots = green_opponent
 
     n_game = 100
-    _, _, _, _, winner_names = loop_games_between_robots(
+    _, win_stat , _, _, winner_names = loop_games_between_robots(
                 red_robots, green_robots, n_game, save_game_to_file=False, with_last_step=False, display_step=100)
 
     n_as_red_win = ( winner_names == bytes(red_ai.name, 'utf-8') ).sum()
+    n_as_red_draw = n_game - win_stat.sum()
 
     ## first as green 
     red_robots = red_opponent
@@ -219,7 +222,10 @@ def robot_evaluate(red_ai , green_ai):
                 red_robots, green_robots, n_game, save_game_to_file=False, with_last_step=False, display_step=100)
 
     n_as_green_win = ( winner_names == bytes(green_ai.name, 'utf-8') ).sum()
+    n_as_green_draw = n_game - win_stat.sum()
 
     robot_win_rate = (( n_as_red_win + n_as_green_win ) / (2 * n_game) )
+    draw_rate = (( n_as_red_draw + n_as_green_draw ) / (2 * n_game) )
+    loss_rate = 1 - robot_win_rate - draw_rate
 
-    return robot_win_rate
+    return win_rate, draw_rate, loss_rate 
