@@ -4,7 +4,6 @@ import logging as l
 import sys, os
 from game_env.game_env import GameEnv, RED, GREEN
 from . import random_robot_players as rp
-from . import data_preparer as dp
 
 
 def play_game(g, red_player , green_player):
@@ -134,7 +133,6 @@ def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_fil
         # if move_count <= 6:
         #     print('****')
         #     print(g.print_ascii())
-        #     dp.game_seq_study(g.step_trace)
         #     break
         all_game_history.append( g.get_history() )
 
@@ -168,52 +166,3 @@ def manual_test():
         print( g.print_ascii() )
 
         isRed= not isRed
-
-def test22():
-    g = GameEnv()
-
-    red_robots = rp.getRobots(RED,GREEN)
-    green_robots = rp.getRobots(GREEN,RED)
-
-    r_idx = np.random.choice( len(red_robots))
-    g_idx = np.random.choice( len(green_robots))
-    p_r = red_robots[r_idx]
-    p_g = green_robots[g_idx]
-
-    won = False
-    count = 0
-    while not won:
-        print('******** count {} RED'.format(count))
-        c0 = p_r.move(g)
-        oc = g.test_all_moves(RED)
-        dc = g.test_all_moves(GREEN)
-        valid_move, won , board = g.move(RED,c0)
-        l.info( g.print_ascii() )
-        print('red suggested : offense {} defense {} , actual {}'.format(oc,dc,c0))
-        print('won : {}, valid {}'.format(won, valid_move))
-        if won:
-            break
-
-        count += 1
-        print('******** count {} GREEN'.format(count))
-        c0 = p_g.move(g)
-        oc = g.test_all_moves(GREEN)
-        dc = g.test_all_moves(RED)
-        valid_move, won , board = g.move(GREEN,c0)
-        l.info( g.print_ascii() )
-        print('green suggested : offense {} defense {} , actual {}'.format(oc,dc,c0))
-        print('won : {}, valid {}'.format(won, valid_move))
-        if won:
-            break
-
-        count += 1
-
-        if count > 43 :
-            break
-
-    print('red lv  : {}'.format(p_r.name) )
-    print('green lv: {}'.format(p_g.name) )
-
-    seqs = g.step_trace
-
-    dp.generate_1game_data(seqs)
