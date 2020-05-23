@@ -158,14 +158,20 @@ class GameEnv():
         return valid_move, game_won, self.board 
 
 
-    def get_history(self):
+    def get_history(self,with_last_step=False):
 
         if not self.score_assigned :
-            data_history = self.step_history[0:self.n_step+1]
-            self.step_history = history_to_assign_score_label(self.game_won, data_history)
+            step_count = self.n_step
+            scores = history_to_assign_score_label(self.game_won, step_count)
+
+            self.step_history[0:self.n_step,-1] = scores
+
             self.score_assigned = True
 
-        return self.step_history 
+        if with_last_step:
+            return self.step_history[0:self.n_step+1]
+        else:
+            return self.step_history[0:self.n_step]
 
     def __add_history(self, col_pos_index, color):
         col_pos_onehot = np.zeros( 7 )
@@ -208,11 +214,7 @@ class GameEnv():
         return print_line
 
 
-def history_to_assign_score_label(game_won, step_history):
-    count = step_history.shape[0] -1 
-
-    data = step_history[:count]
-
+def history_to_assign_score_label(game_won, count):
     winner_start_score = 0.02
     max_score = 1.0
     ### even number
@@ -226,16 +228,17 @@ def history_to_assign_score_label(game_won, step_history):
 
     ### assign score
     scores = np.arange( start_score, max_score, (max_score)/count)
-    data[:,-1] = scores
+    # data[:,-1] = scores
 
     ## if someone won, then someone loss, negative the score for the losser
     ## if no one won, both get positive score
     if game_won :
-        data[start_index::2,-1] = data[start_index::2,-1] * -1
+        # data[start_index::2,-1] = data[start_index::2,-1] * -1
+        scores[start_index::2] = scores[start_index::2] * -1
 
-    data[-1,-1] = max_score 
+    scores[-1] = max_score 
 
-    return data
+    return scores 
 
 
 def show_data_step_ascii(board, col_pos, color , score):

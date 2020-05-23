@@ -93,11 +93,12 @@ def loop_games(n_game=200, save_game_to_file=True):
 
     l.info(' vstacking data')
     data = np.vstack( all_game_history )
+    del all_game_history
 
     if save_game_to_file:
         _create_data(data, win_stat, move_count_stat, winner_level_stat)
 
-    return all_game_history, data
+    return data
 
 def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file=True):
     g = GameEnv()
