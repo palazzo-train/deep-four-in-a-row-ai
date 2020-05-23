@@ -5,10 +5,11 @@ import pandas as pd
 import logging as l
 from . import model as m
 
+HP_Batch = 256
 
 
-def get_dataset(n_example=120000):
-    l.info('loading data file')
+def get_numpy_data():
+    l.info('loading numpy data file')
     with open('data/data3/data.npz', 'rb') as f:
         dd = np.load(f)
         data_train = dd['data_train']
@@ -18,13 +19,19 @@ def get_dataset(n_example=120000):
         move_count_stat = dd['move_count_stat']
         winner_level_stat = dd['winner_level_stat']
 
-
     l.info('total size of training data {}'.format(data_train.shape))
     l.info('total size of dev data {}'.format(data_dev.shape))
     l.info('total size of test data {}'.format(data_test.shape))
     l.info('total size of win stat data {}'.format(win_stat.shape))
     l.info('total size of move data {}'.format(move_count_stat.shape))
     l.info('total size of player level data {}'.format(winner_level_stat.shape))
+
+    return data_train , data_dev , data_test , win_stat , move_count_stat , winner_level_stat 
+
+def get_dataset(n_example=120000):
+    l.info('loading dataset file')
+    data_train , data_dev , data_test , win_stat , move_count_stat , winner_level_stat = get_numpy_data()
+
     l.info('shuffling...')
 
     np.random.shuffle(data_train)
@@ -38,7 +45,7 @@ def get_dataset(n_example=120000):
 
         l.info('converting to tf dataset : {}'.format(name))
         dataset = tf.data.Dataset.from_tensor_slices((x[0:n_example], y[0:n_example]))
-        dataset = dataset.batch(32)
+        dataset = dataset.batch(HP_Batch)
         l.info('dataset shuffle')
         dataset.shuffle(4096)
 

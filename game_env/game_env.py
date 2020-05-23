@@ -4,6 +4,9 @@ import numpy as np
 _n_row = 6
 _n_col = 7
 
+_board_size = _n_row * _n_col * 3
+_history_step_size = _board_size + 7 + 3 + 1
+
 GREEN = np.array([1,0,0])
 RED =   np.array([0,1,0])
 BLANK = np.array([0,0,1])
@@ -120,13 +123,19 @@ class GameEnv():
     def reset(self):
         self.board = np.zeros( [_n_row, _n_col, 3])
         self.board[:,:] = BLANK
-        self.n_player_step = np.array( [0,0])
         self.n_step = 0
         self.next_row_pos = np.zeros( _n_col , dtype='int')
         self.win_masks = self.__get_winning_masks()
+        self.game_won = False
 
         self.winner = BLANK
-        self.step_trace = []
+        self.score_assigned = False
+
+        ### board + col_pos + color + score
+        h_size = _history_step_size 
+        # max_step = _n_row * _n_row + 1
+        max_step = 43 
+        self.step_history = np.zeros( [ max_step, h_size] )
 
     def __get_winning_masks(self):
         return _global_winning_masks.copy()
@@ -149,26 +158,47 @@ class GameEnv():
         return valid_move, game_won, self.board 
 
 
+    def get_history(self):
+
+        if not self.score_assigned :
+            data_history = self.step_history[0:self.n_step+1]
+            self.step_history = history_to_assign_score_label(self.game_won, data_history)
+            self.score_assigned = True
+
+        return self.step_history 
+
+    def __add_history(self, col_pos_index, color):
+        col_pos_onehot = np.zeros( 7 )
+        col_pos_onehot[col_pos_index] = 1
+
+        x = np.concatenate( [ col_pos_onehot , color ])
+        self.step_history[self.n_step, _board_size:-1] = x
+
     def move(self, color , col_pos):
         valid_move, game_won = _m_move_test(self.board, self.next_row_pos , color , col_pos)
 
         if not valid_move:
             return valid_move, game_won, self.board 
 
+        ### save the before move board in history
+        self.step_history[self.n_step,0:_board_size] = self.board.reshape(-1)
+
         ## commit move
         col_row = self.next_row_pos[col_pos]
         self.board[col_row, col_pos] = color
         self.next_row_pos[col_pos] += 1
 
-        index = _m_color_to_index(color)
-        game_step = ( self.board.copy() , col_pos, color, self.n_player_step[index] , self.n_step , game_won )
+        self.__add_history(col_pos, color)
 
-        self.step_trace.append( game_step )
-        self.n_player_step[index] += 1
+        ## committed
         self.n_step += 1
 
         if game_won :
+            ## add list history
+            self.step_history[self.n_step,0:_board_size] = self.board.reshape(-1)
             self.winner = color
+
+        self.game_won = game_won
 
         return valid_move, game_won, self.board 
 
@@ -178,4 +208,72 @@ class GameEnv():
         return print_line
 
 
+def history_to_assign_score_label(game_won, step_history):
+    count = step_history.shape[0] -1 
 
+    data = step_history[:count]
+
+    winner_start_score = 0.02
+    max_score = 1.0
+    ### even number
+    if count % 2 == 0 : 
+        start_index = 0
+        start_score = 0
+    else:
+        start_index = 1
+        start_score = winner_start_score 
+
+
+    ### assign score
+    scores = np.arange( start_score, max_score, (max_score)/count)
+    data[:,-1] = scores
+
+    ## if someone won, then someone loss, negative the score for the losser
+    ## if no one won, both get positive score
+    if game_won :
+        data[start_index::2,-1] = data[start_index::2,-1] * -1
+
+    data[-1,-1] = max_score 
+
+    return data
+
+
+def show_data_step_ascii(board, col_pos, color , score):
+    cc = 'end game'
+    if (color == RED).all() :
+        cc = 'red'
+    elif (color == GREEN).all() :
+        cc = 'green'
+
+    col_ascii = [ '1      ',
+                    ' 1     ',
+                    '  1    ',
+                    '   1   ',
+                    '    1  ',
+                    '     1 ',
+                    '      1' ]
+
+    print( board_to_ascii(board) )
+
+    cc_mask = col_pos * np.arange(7)
+    col_i = int(np.sum(cc_mask))
+
+    # print( col_ascii[ col_pos * np.arange(7 )).sum() ] )
+    print(col_ascii[col_i])
+    print( 'col_pos: {}'.format( col_pos ))
+    print( 'color : {}  -> {}'.format( cc, color ))
+    print( 'score: {}'.format(score))
+
+def print_game_history_ascii( game_history ):
+    if game_history.ndim == 1:
+        working_step = [ game_history ]
+    else:
+        working_step = game_history
+        
+    for step in working_step :
+        board = step[0:_board_size].reshape(6,7,3)
+        col_pos = step[_board_size:_board_size+7]
+        color = step[_board_size+7:_board_size+7+3]
+        score = step[-1]
+        show_data_step_ascii(board, col_pos, color , score )
+            

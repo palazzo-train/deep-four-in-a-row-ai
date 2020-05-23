@@ -27,6 +27,24 @@ def setupLogging():
 
 
 
+def test_robot():
+    import model_ai.robot as robot 
+    import game_env.game_env as g
+    import data_generator.random_robot_players as rp
+    import data_generator.game_manager  as gm
+
+    path = r'D:\my_project\repo\deep-four-in-a-row-ai\save_model\working\savemodel\my_model'
+    print(path)
+
+    r = robot.Robot(g.RED, g.GREEN, path)
+    orobots = rp.getRobots(g.GREEN, g.RED, start_level = 2)
+    game = g.GameEnv()
+
+    for g_player in orobots:
+        won, move_count , winner = gm.play_game(game, r , g_player)
+
+        print((won, move_count, winner.name ))
+        break
 
 def generate_data():
     n_example = 200000
@@ -41,7 +59,8 @@ def main():
 
     l.info('start')
     # generate_data()
-    training()
+    # training()
+    test_robot()
 
 
 if __name__ == "__main__":

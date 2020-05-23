@@ -51,6 +51,18 @@ def test_load_data():
     print(move_count_stat.shape)
     print(winner_level_stat.shape)
 
+
+def _save_data(data_train, data_dev, data_test, win_stat, move_count_stat, winner_level_stat):
+    l.info('saving data ')
+    with open('data/working/data.npz', 'wb') as f:
+        np.savez(f, data_train=data_train, 
+        data_dev = data_dev,
+        data_test = data_test ,
+        win_stat=win_stat, move_count_stat=move_count_stat, winner_level_stat=winner_level_stat)
+
+    # with open('data_stats.npz', 'rb') as f:
+    #     dd = np.load(f)
+    #     ddd = dd['win_stat']
 def _create_data(data, win_stat, move_count_stat, winner_level_stat):
     l.info('saving data shape {}'.format(data.shape))
 
@@ -65,25 +77,31 @@ def _create_data(data, win_stat, move_count_stat, winner_level_stat):
     data_dev = data[train_end:dev_end]
     data_test = data[dev_end:]
 
-    l.info('saving data ')
-    with open('data/data.npz', 'wb') as f:
-        np.savez(f, data_train=data_train, 
-        data_dev = data_dev,
-        data_test = data_test ,
-        win_stat=win_stat, move_count_stat=move_count_stat, winner_level_stat=winner_level_stat)
-
-    # with open('data_stats.npz', 'rb') as f:
-    #     dd = np.load(f)
-    #     ddd = dd['win_stat']
+    _save_data(data_train, data_dev, data_test, win_stat, move_count_stat, winner_level_stat)
 
     l.info('saving completed')
 
-def loop_games(n_game=200):
-    l.info('start')
-    g = GameEnv()
 
+
+
+
+def loop_games(n_game=200, save_game_to_file=True):
+    l.info('start')
     red_robots = rp.getRobots(RED,GREEN)
     green_robots = rp.getRobots(GREEN,RED)
+
+    all_game_history, win_stat, move_count_stat, winner_level_stat = loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file)
+
+    l.info(' vstacking data')
+    data = np.vstack( all_game_history )
+
+    if save_game_to_file:
+        _create_data(data, win_stat, move_count_stat, winner_level_stat)
+
+    return all_game_history, data
+
+def loop_games_between_robots(red_robots, green_robots, n_game, save_game_to_file=True):
+    g = GameEnv()
 
     total_move = 0
 
@@ -91,7 +109,7 @@ def loop_games(n_game=200):
     win_stat = np.zeros( n_game )
     winner_level_stat = np.zeros( n_game )
 
-    all_game_seq = []
+    all_game_history = []
     won_count = 0
     for gi in range(n_game):
         g.reset()
@@ -118,16 +136,15 @@ def loop_games(n_game=200):
         #     print(g.print_ascii())
         #     dp.game_seq_study(g.step_trace)
         #     break
-
-        all_game_seq.append( g.step_trace )
+        all_game_history.append( g.get_history() )
 
     
     l.info('Total {} games played. {} won. total step {}=={}. average step per game {}'.format(
         n_game, win_stat.sum(), move_count_stat.sum(), total_move, move_count_stat.sum() / n_game) )
-    l.info('generating data')
-    data = dp.generate_games_data(all_game_seq)
 
-    _create_data(data, win_stat, move_count_stat, winner_level_stat)
+    return all_game_history, win_stat, move_count_stat, winner_level_stat , 
+
+
 
 
 def manual_test():

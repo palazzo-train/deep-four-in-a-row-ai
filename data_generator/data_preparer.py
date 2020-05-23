@@ -1,19 +1,7 @@
 import logging as l
 import numpy as np
-import game_env as g
+import game_env.game_env as ge
 
-
-def game_seq_study(game_seq):
-    l.info('study')
-
-    step = 1
-    for row in game_seq:
-        board , col_pos, color, n_player_step , n_step , game_won  = row
-
-        print('step {} color {}'.format(step,color))
-        print(g.board_to_ascii(board))
-
-        step += 1
 
 
 def generate_games_data(list_game_seq):

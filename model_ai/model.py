@@ -24,6 +24,7 @@ def create_model():
     col_move_size = 7
     # col_moves = np.zeros( [count, 7 ] )
 
+    ## 136
     n_features = board_size + color_size + col_move_size  
 
     l.info('total: {}  board : {} color : {} color_move : {}'.format( n_features, board_size, color_size, col_move_size))

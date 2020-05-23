@@ -39,7 +39,7 @@ class RobotSmartRandom(RobotRandom):
         return col 
 
 
-def getRobots(mycolor, opponent_color):
+def getRobots(mycolor, opponent_color, start_level = -1):
     ps = []
     robots = []
     p = np.array( [ 1 , 1, 1, 1, 1  ,1 , 1 ] )
@@ -55,9 +55,13 @@ def getRobots(mycolor, opponent_color):
     p = np.array( [ 3 , 3, 5, 5, 5  ,3 , 3 ] )
     ps.append( p )
 
+    if start_level == -1 :
+        levels =[ 0 , 1 , 1 , 2 , 2]
+    else:
+        levels =[ start_level , start_level + 1] 
 
     for p in ps:
-        for level in [ 1, 2 ]:
+        for level in  levels:
             r = RobotSmartRandom(p, mycolor, opponent_color, level )
             robots.append(r)
 
