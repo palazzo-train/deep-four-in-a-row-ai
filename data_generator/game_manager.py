@@ -4,6 +4,7 @@ import logging as l
 import sys, os
 from game_env.game_env import GameEnv, RED, GREEN
 from . import random_robot_players as rp
+import global_config as gc
 
 
 def play_game(g, red_player , green_player):
@@ -33,7 +34,10 @@ def play_game(g, red_player , green_player):
         active_idx = (( active_idx + 1 )% 2 )
     return won , move_count, player 
 
-def test_load_data():
+def load_data():
+    path = os.path.join( gc.C_save_data_folder , 'data.npz' )
+    l.info('loading data {}'.format(path))
+
     with open('data/data.npz', 'rb') as f:
         dd = np.load(f)
         data_train = dd['data_train']
@@ -50,10 +54,14 @@ def test_load_data():
     print(move_count_stat.shape)
     print(winner_level_stat.shape)
 
+    return data_train, data_dev, data_test, win_stat, move_count_stat, winner_level_stat
+
 
 def _save_data(data_train, data_dev, data_test, win_stat, move_count_stat, winner_level_stat):
-    l.info('saving data ')
-    with open('data/working/data.npz', 'wb') as f:
+    path = os.path.join( gc.C_save_data_folder , 'data.npz' )
+    l.info('saving data {}'.format(path))
+
+    with open(path, 'wb') as f:
         np.savez(f, data_train=data_train, 
         data_dev = data_dev,
         data_test = data_test ,
@@ -62,6 +70,8 @@ def _save_data(data_train, data_dev, data_test, win_stat, move_count_stat, winne
     # with open('data_stats.npz', 'rb') as f:
     #     dd = np.load(f)
     #     ddd = dd['win_stat']
+
+
 def _create_data(data, win_stat, move_count_stat, winner_level_stat):
     l.info('saving data shape {}'.format(data.shape))
 
@@ -79,9 +89,6 @@ def _create_data(data, win_stat, move_count_stat, winner_level_stat):
     _save_data(data_train, data_dev, data_test, win_stat, move_count_stat, winner_level_stat)
 
     l.info('saving completed')
-
-
-
 
 
 def loop_games(n_game=200, save_game_to_file=True, with_last_step=False):

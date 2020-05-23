@@ -47,8 +47,8 @@ def test_robot():
         break
 
 def generate_data():
-    n_example = 200000
-    # n_example = 1000
+    # n_example = 200
+    n_example = 170000
     gm.loop_games(n_example)
 
 def training():
@@ -58,9 +58,9 @@ def main():
     setupLogging()
 
     l.info('start')
-    # generate_data()
+    generate_data()
     # training()
-    test_robot()
+    # test_robot()
 
 
 if __name__ == "__main__":

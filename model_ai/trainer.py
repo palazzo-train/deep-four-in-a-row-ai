@@ -1,16 +1,19 @@
+import os
 import numpy as np
 import tensorflow as tf
 import datetime
 import pandas as pd
 import logging as l
 from . import model as m
+import global_config as gc
 
-HP_Batch = 256
 
 
 def get_numpy_data():
-    l.info('loading numpy data file')
-    with open('data/data3/data.npz', 'rb') as f:
+    path = os.path.join( gc.C_save_data_folder , 'data.npz' )
+    l.info('loading numpy data file {}'.format(path))
+
+    with open(path, 'rb') as f:
         dd = np.load(f)
         data_train = dd['data_train']
         data_dev = dd['data_dev']
@@ -45,9 +48,9 @@ def get_dataset(n_example=120000):
 
         l.info('converting to tf dataset : {}'.format(name))
         dataset = tf.data.Dataset.from_tensor_slices((x[0:n_example], y[0:n_example]))
-        dataset = dataset.batch(HP_Batch)
+        dataset = dataset.batch(gc.HP_Batch)
         l.info('dataset shuffle')
-        dataset.shuffle(4096)
+        dataset.shuffle( gc.HP_DATA_SHUFFLE_SIZE )
 
         all_data.append(dataset)
 
@@ -99,8 +102,8 @@ def _save_history(history_folder, history, run_time):
     df.to_csv(history_path)
 
 def train_model():
-    working_folder = 'working'
-    base_folder = 'save_model'
+    working_folder = gc.C_save_model_current_folder 
+    base_folder = gc.C_save_model_base_folder
 
     run_time  = datetime.datetime.now()
 
@@ -109,13 +112,14 @@ def train_model():
     checkpoint_path = './{}/{}/checkpoint/checkpoint'.format(base_folder, working_folder)
     save_model_path = './{}/{}/savemodel/my_model'.format(base_folder, working_folder)
 
-    model = _get_model(save_model_path, create_new=False)
+    to_create_new = (not gc.MODE_RESUME_TRAINING)
+    model = _get_model(save_model_path, create_new=to_create_new)
 
-    # n_example = 1200000
-    n_example = 5111000
-    # n_example = 100 
-    epochs = 60
-    # epochs = 2
+    if gc.MODE_RESUME_TRAINING:
+        model.load_weights(checkpoint_path)
+
+    n_example = gc.HP_NUM_TRAINING_DATA 
+    epochs = gc.HP_EPOCH
 
     l.info('loading dataset . n_example {}'.format(n_example))
     dataset_train , dataset_dev , dataset_test  = get_dataset(n_example)
@@ -127,8 +131,9 @@ def train_model():
 
     l.info('saving model')
     tf.keras.models.save_model( model, save_model_path )
+    if gc.MODE_RESUME_TRAINING:
+        model.save_weights(checkpoint_path)
 
-    # history = model.fit(x, y, batch_size=64, epochs=1, validation_data=(x_val, y_val))
     l.info('saving history')
     _save_history(history_folder, history.history, run_time)
 
