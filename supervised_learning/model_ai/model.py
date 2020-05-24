@@ -32,7 +32,7 @@ def create_model():
 
     inputs = tf.keras.Input(shape=(n_features,), name='input')
     x0 = layers.Lambda( lambda x : x[:,0:board_size] , name='board_input')(inputs)
-    x0 = layers.Reshape([ge.NUM_ROW ,ge.NUM_COL,3] , name='board_shape')(x0)
+    x0 = layers.Reshape([ge.NUM_ROW ,ge.NUM_COL,ge.NUM_COLOR_STATE] , name='board_shape')(x0)
 
     x1 = layers.Lambda( lambda x : x[:,board_size:]  , name='other_input')(inputs)
 
