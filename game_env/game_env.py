@@ -6,7 +6,7 @@ _n_col = 7
 _n_slot_state = 3
 _n_in_a_row = 4
 
-_n_max_step = _n_row * _n_col  + 1
+_n_max_step = _n_row * _n_col 
 
 
 _board_size = _n_row * _n_col * _n_slot_state 
@@ -24,6 +24,7 @@ NUM_COL = _n_col
 NUM_ROW = _n_row
 NUM_COLOR_STATE = _n_slot_state
 NUM_IN_A_ROW = _n_in_a_row
+NUM_MAX_STEP_PER_GAME = _n_max_step 
 
 def __m_create_winning_mask(n_row, n_col, n_in_a_row):
     masks = []
@@ -144,8 +145,8 @@ class GameEnv():
 
         ### board + col_pos + color + score
         h_size = _history_step_size 
-        max_step = _n_max_step
-        self.step_history = np.zeros( [ max_step, h_size] )
+        max_histo_step = _n_max_step + 1
+        self.step_history = np.zeros( [ max_histo_step , h_size] )
 
     def __get_winning_masks(self):
         return _global_winning_masks.copy()
@@ -216,7 +217,7 @@ class GameEnv():
             self.winner = color
             game_end = True
 
-        if self.n_step == 42:
+        if self.n_step == _n_max_step :
             game_end = True
 
 

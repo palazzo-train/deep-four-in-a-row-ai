@@ -2,11 +2,11 @@ import numpy as np
 import logging 
 import logging as l
 import sys, os
-import data_generator.game_manager as gm
-import model_ai.trainer as trainer 
+import supervised_learning.data_generator.game_manager as gm
+import supervised_learning.model_ai.trainer as trainer 
 import tensorflow as tf
 
-import global_config as gc
+import global_config_supervised_learning as gc
 
 def setupLogging():
     fileName = 'app.log'
@@ -52,14 +52,15 @@ def generate_data():
 def training():
     model = trainer.train_model()
 
-def main():
+
+def supervised_main():
     setupLogging()
 
     l.info('start')
-    # generate_data()
-    training()
+    generate_data()
+    # training()
     # test_robot()
 
 
 if __name__ == "__main__":
-    main()
+    supervised_main()

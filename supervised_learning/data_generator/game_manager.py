@@ -2,10 +2,11 @@ import numpy as np
 import logging 
 import logging as l
 import sys, os
+import game_env.game_env as ge
 from game_env.game_env import GameEnv, RED, GREEN
 from . import random_robot_players as rp
-import model_ai.robot as robot 
-import global_config as gc
+import supervised_learning.model_ai.robot as robot 
+import global_config_supervised_learning as gc
 
 
 
@@ -34,7 +35,7 @@ def play_game(g, red_player , green_player):
         if won:
             break
 
-        if move_count >= 42 or game_end :
+        if move_count >= ge.NUM_MAX_STEP_PER_GAME or game_end :
             break
 
         active_idx = (( active_idx + 1 )% 2 )

@@ -5,8 +5,8 @@ import datetime
 import pandas as pd
 import logging as l
 from . import model as m
-import global_config as gc
-import data_generator.game_manager  as gm
+import global_config_supervised_learning as gc
+import supervised_learning.data_generator.game_manager  as gm
 
 
 class MyCustomRobotEvalCallback(tf.keras.callbacks.Callback):
