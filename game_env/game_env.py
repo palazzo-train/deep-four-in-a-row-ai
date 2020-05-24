@@ -23,43 +23,44 @@ NUM_ROW = _n_row
 NUM_COLOR_STATE = _n_slot_state
 NUM_IN_A_ROW = _n_in_a_row
 
-def __m_create_winning_mask():
+def __m_create_winning_mask(n_row, n_col, n_in_a_row):
     masks = []
-    w = np.ones( 4)
+    w = np.ones(n_in_a_row)
 
     ## horizontal
-    for row in range(_n_row):
-        for col in range(_n_col - 3):
-            mask = np.zeros( [_n_row ,_n_col] )
-            mask[row,col:col+4] = w
+    for row in range(n_row):
+        for col in range(n_col - (n_in_a_row-1)):
+            mask = np.zeros( [n_row ,n_col] )
+            mask[row,col:col+n_in_a_row] = w
             masks.append(mask)
 
     ## vertical
-    for row in range(_n_row - 3):
-        for col in range(_n_col):
-            mask = np.zeros( [_n_row,_n_col] )
-            mask[row:row+4,col] = w
+    for row in range(n_row - (n_in_a_row-1)):
+        for col in range(n_col):
+            mask = np.zeros( [n_row,n_col] )
+            mask[row:row+n_in_a_row,col] = w
             masks.append(mask)
 
     ## diagonal
-    w1 = np.array( [ [ 1, 0, 0, 0] ,
-                    [ 0, 1, 0, 0]  , 
-                    [ 0, 0, 1, 0]  , 
-                    [ 0, 0, 0, 1] ] )
+    w1 = np.zeros((n_in_a_row, n_in_a_row))
+    np.fill_diagonal(w1,1)
+    
     w2 = np.flip(w1, 0)
 
     for w in [w1, w2]:
-        for row in range(_n_row - 3):
-            for col in range(_n_col - 3):
-                mask = np.zeros( [_n_row,_n_col] )
-                mask[row:row+4,col:col+4] = w
+        for row in range(n_row - (n_in_a_row-1)):
+            for col in range(n_col - (n_in_a_row-1)):
+                mask = np.zeros( [n_row,n_col] )
+                mask[row:row+n_in_a_row,col:col+n_in_a_row] = w
                 masks.append(mask)
 
-    ### size [ n , _n_row , _n_col ]
+    ### size [ n , n_row , n_col ]
     return np.stack(masks)
 
+
+
 ### init global winning mask
-_global_winning_masks = __m_create_winning_mask()
+_global_winning_masks = __m_create_winning_mask(_n_row,_n_col,_n_in_a_row)
 
 
 
