@@ -1,11 +1,11 @@
 ###  running mode
-MODE_RESUME_TRAINING = True 
+MODE_RESUME_TRAINING = False 
 MODE_ENABLE_MODEL_ROBOT_EVULATION = True 
 
 
 ### environment
-C_save_data_folder = 'project_data/data/working'
-C_save_model_base_folder = 'project_data/saved_model'
+C_save_data_folder = 'project_data/supervised/data/working'
+C_save_model_base_folder = 'project_data/supervised/saved_model'
 C_save_model_current_folder = 'working'
 
 
@@ -13,7 +13,7 @@ C_save_model_current_folder = 'working'
 ### Hyperparameters
 HP_Batch = 4096 
 # HP_Batch = 8
-HP_EPOCH = 10 
+HP_EPOCH = 1 
 # HP_EPOCH = 500
 # HP_NUM_TRAINING_DATA = 5111000
 HP_NUM_TRAINING_DATA = 200
