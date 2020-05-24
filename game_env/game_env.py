@@ -16,9 +16,9 @@ GREEN = np.array([1,0,0])
 RED =   np.array([0,1,0])
 BLANK = np.array([0,0,1])
 
-_green_index = 0
-_red_index = 1
-_blank_index = 2
+GREEN_INDEX = 0
+RED_INDEX = 1
+BLANK_INDEX = 2
 
 NUM_COL = _n_col
 NUM_ROW = _n_row
@@ -81,10 +81,10 @@ def _m_is_win(color, board):
 
 
 def _m_color_to_index(color):
-    if color[_green_index] == 1 :
-        index = _green_index
-    elif color[_red_index] == 1:
-        index = _red_index
+    if color[GREEN_INDEX] == 1 :
+        index = GREEN_INDEX
+    elif color[RED_INDEX] == 1:
+        index = RED_INDEX
 
     return index
 
@@ -110,9 +110,9 @@ def _m_move_test(board, next_row_pos , color , col_pos):
 def board_to_ascii(board, console=True):
     print_board = np.zeros( [_n_row, _n_col] , 'U1')
 
-    print_board[ board[:,:,_blank_index] == 1] = '_'
-    print_board[ board[:,:,_red_index] == 1] = 'R'
-    print_board[ board[:,:,_green_index] == 1] = 'O'
+    print_board[ board[:,:,BLANK_INDEX] == 1] = '_'
+    print_board[ board[:,:,RED_INDEX] == 1] = 'R'
+    print_board[ board[:,:,GREEN_INDEX] == 1] = 'O'
 
     print_board = np.flip(print_board, 0) 
 
