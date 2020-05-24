@@ -4,7 +4,7 @@ import logging as l
 import sys, os
 import game_env.game_env as ge
 from game_env.game_env import GameEnv, RED, GREEN
-from . import random_robot_players as rp
+import game_env.random_robot_players as rp
 import supervised_learning.model_ai.robot as robot 
 import global_config_supervised_learning as gc
 

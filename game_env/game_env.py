@@ -26,6 +26,7 @@ NUM_COLOR_STATE = _n_slot_state
 NUM_IN_A_ROW = _n_in_a_row
 NUM_MAX_STEP_PER_GAME = _n_max_step 
 
+
 def __m_create_winning_mask(n_row, n_col, n_in_a_row):
     masks = []
     w = np.ones(n_in_a_row)
