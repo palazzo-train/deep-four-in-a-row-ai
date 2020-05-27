@@ -1,4 +1,5 @@
 import numpy as np 
+from .game_history_logger import HistoryLogger 
 
 ### constants
 _n_row = 6
@@ -10,7 +11,6 @@ _n_max_step = _n_row * _n_col
 
 
 _board_size = _n_row * _n_col * _n_slot_state 
-_history_step_size = _board_size + _n_col + _n_slot_state + 1
 
 GREEN = np.array([1,0,0])
 RED =   np.array([0,1,0])
@@ -128,6 +128,11 @@ def board_to_ascii(board, console=True):
 
     return print_line
 
+
+
+
+
+
 class GameEnv():
 
     def __init__(self):
@@ -142,12 +147,8 @@ class GameEnv():
         self.game_won = False
 
         self.winner = BLANK
-        self.score_assigned = False
 
-        ### board + col_pos + color + score
-        h_size = _history_step_size 
-        max_histo_step = _n_max_step + 1
-        self.step_history = np.zeros( [ max_histo_step , h_size] )
+        self.history_logger = HistoryLogger(_n_row, _n_col, _n_slot_state)
 
     def __get_winning_masks(self):
         return _global_winning_masks.copy()
@@ -171,26 +172,8 @@ class GameEnv():
 
 
     def get_history(self,with_last_step=False):
-
-        if not self.score_assigned :
-            step_count = self.n_step
-            scores = history_to_assign_score_label(self.game_won, step_count)
-
-            self.step_history[0:self.n_step,-1] = scores
-
-            self.score_assigned = True
-
-        if with_last_step:
-            return self.step_history[0:self.n_step+1]
-        else:
-            return self.step_history[0:self.n_step]
-
-    def __add_history(self, col_pos_index, color):
-        col_pos_onehot = np.zeros( _n_col )
-        col_pos_onehot[col_pos_index] = 1
-
-        x = np.concatenate( [ col_pos_onehot , color ])
-        self.step_history[self.n_step, _board_size:-1] = x
+        if self.history_logger is not None :
+            self.history_logger.get_history(self.n_step, self.game_won, with_last_step)
 
     def move(self, color , col_pos):
         valid_move, game_won = _m_move_test(self.board, self.next_row_pos , color , col_pos)
@@ -200,21 +183,25 @@ class GameEnv():
             return valid_move, game_end, game_won, self.board 
 
         ### save the before move board in history
-        self.step_history[self.n_step,0:_board_size] = self.board.reshape(-1)
+        if self.history_logger is not None :
+            self.history_logger.save_board(self.n_step, self.board)
 
         ## commit move
         col_row = self.next_row_pos[col_pos]
         self.board[col_row, col_pos] = color
         self.next_row_pos[col_pos] += 1
 
-        self.__add_history(col_pos, color)
+        if self.history_logger is not None :
+            self.history_logger.add_history(self.n_step, col_pos, color)
 
         ## committed
         self.n_step += 1
 
         if game_won :
             ## add list history
-            self.step_history[self.n_step,0:_board_size] = self.board.reshape(-1)
+            if self.history_logger is not None :
+                self.history_logger.add_game_won(self.n_step, self.board)
+
             self.winner = color
             game_end = True
 
@@ -232,31 +219,6 @@ class GameEnv():
         return print_line
 
 
-def history_to_assign_score_label(game_won, count):
-    winner_start_score = 0.02
-    max_score = 1.0
-    ### even number
-    if count % 2 == 0 : 
-        start_index = 0
-        start_score = 0
-    else:
-        start_index = 1
-        start_score = winner_start_score 
-
-
-    ### assign score
-    scores = np.arange( start_score, max_score, (max_score)/count)
-    # data[:,-1] = scores
-
-    ## if someone won, then someone loss, negative the score for the losser
-    ## if no one won, both get positive score
-    if game_won :
-        # data[start_index::2,-1] = data[start_index::2,-1] * -1
-        scores[start_index::2] = scores[start_index::2] * -1
-
-    scores[-1] = max_score 
-
-    return scores 
 
 
 def show_data_step_ascii(board, col_pos, color , score):
