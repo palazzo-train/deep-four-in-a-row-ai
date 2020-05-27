@@ -16,8 +16,6 @@ def color_index_to_name(color_index):
 def play_game(env, ai):
     state = env.reset()
 
-    color_index = state[-1]
-
     game_end = False
     while not game_end:
         logits = ai( np.atleast_2d(state) )
