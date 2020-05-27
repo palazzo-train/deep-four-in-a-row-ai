@@ -3,7 +3,7 @@ import tensorflow as tf
 from .model import MyModel as MyModel
 
 class DQN:
-    def __init__(self, num_states, num_actions, hidden_units, gamma, max_experiences, min_experiences, batch_size, lr):
+    def __init__(self, num_actions, gamma, max_experiences, min_experiences, batch_size, lr):
         self.num_actions = num_actions
         self.batch_size = batch_size
         self.optimizer = tf.optimizers.Adam(lr)
@@ -19,6 +19,7 @@ class DQN:
     def train(self, TargetNet):
         if len(self.experience['s']) < self.min_experiences:
             return 0
+
         ids = np.random.randint(low=0, high=len(self.experience['s']), size=self.batch_size)
         states = np.asarray([self.experience['s'][i] for i in ids])
         actions = np.asarray([self.experience['a'][i] for i in ids])
@@ -32,16 +33,18 @@ class DQN:
             selected_action_values = tf.math.reduce_sum(
                 self.predict(states) * tf.one_hot(actions, self.num_actions), axis=1)
             loss = tf.math.reduce_mean(tf.square(actual_values - selected_action_values))
+
         variables = self.model.trainable_variables
         gradients = tape.gradient(loss, variables)
         self.optimizer.apply_gradients(zip(gradients, variables))
+
         return loss
 
     def get_action(self, states, epsilon):
         if np.random.random() < epsilon:
             return np.random.choice(self.num_actions)
         else:
-            return np.argmax(self.predict(np.atleast_2d(states))[0])
+            return np.argmax(self.predict(np.atleast_2d(states.astype('float32')))[0])
 
     def add_experience(self, exp):
         if len(self.experience['s']) >= self.max_experiences:

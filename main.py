@@ -137,11 +137,16 @@ def testtest111():
     player_action( 5, 6 )
 
 
+def test_train():
+    import reinforcement_learning.model_ai.ddqn_trainer as trainer
+
+    trainer.train(500000)
 
 def reforcement_main():
     # testtest111()
     # test_ai()
-    test_eval_model_ai()
+    # test_eval_model_ai()
+    test_train()
 
 
 

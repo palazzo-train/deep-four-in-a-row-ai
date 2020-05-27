@@ -18,16 +18,16 @@ def play_game(env, ai):
 
     game_end = False
     while not game_end:
-        logits = ai( np.atleast_2d(state) )
+        logits = ai( np.atleast_2d(state.astype('float32')) )
 
         action = np.argmax(logits[0])
 
         # probs = tf.nn.softmax(logits)
         # action = np.random.choice(env.action_size, p=probs.numpy()[0])
 
-        state, game_end, valid_move, player_won, robot_won = env.step( action  )
+        state, game_end, reward, valid_move, player_won, robot_won = env.step( action  )
 
-    return player_won, robot_won, valid_move
+    return player_won, robot_won, reward, valid_move
 
 def eval_model_ai(n=100):
 
@@ -37,14 +37,15 @@ def eval_model_ai(n=100):
     env = ger.Env()
     ai = rm.MyModel()
 
-    stats = np.zeros( [ n, 3 ])
+    stats = np.zeros( [ n, 4 ])
 
     for i in range(n):
-        player_won, robot_won, valid_move = play_game(env, ai)
+        player_won, robot_won, reward, valid_move = play_game(env, ai)
 
         stats[i,0] = player_won
         stats[i,1] = robot_won
-        stats[i,2] = valid_move 
+        stats[i,2] = reward 
+        stats[i,3] = valid_move 
 
     l.info(' evalulate model ai ends')
     return stats

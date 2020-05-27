@@ -19,22 +19,6 @@ import game_env.game_env as ge
 ##  my color = Green  0 or Red = 1
 ##
 
-class MyModelTest(tf.keras.Model):
-    def __init__(self):
-        super(MyModelTest, self).__init__()
-
-        ## input
-        self.input_layer = layers.InputLayer(input_shape=(2,))
-        # self.input_layer  = tf.keras.Input(shape=(2,), name='input')
-        self.out_logits = layers.Dense( 1, activation='linear', kernel_initializer='RandomNormal', name='logits_out')
-        self.build((None,2,))
-
-
-    @tf.function
-    def call(self, inputs):
-        z = self.input_layer(inputs)
-        output = self.out_logits(z)
-        return output
 
 class MyModel(tf.keras.Model):
     def __init__(self):
@@ -62,21 +46,21 @@ class MyModel(tf.keras.Model):
         ## board encoder
         self.board_encoder = []
 
-        self.board_encoder.append( layers.Conv2D(filters=32,kernel_size=[3,3], activation='relu' , kernel_initializer='random_normal', name='conv2d_1') )
+        self.board_encoder.append( layers.Conv2D(filters=64,kernel_size=[3,3], activation='relu' , kernel_initializer='random_normal', name='conv2d_1') )
         self.board_encoder.append( layers.BatchNormalization(name='bn_1') )
-        self.board_encoder.append( layers.Conv2D(filters=64,kernel_size=[3,3], activation='relu', kernel_initializer='random_normal', name='conv2d_2') )
+        self.board_encoder.append( layers.Conv2D(filters=96,kernel_size=[3,3], activation='relu', kernel_initializer='random_normal', name='conv2d_2') )
         self.board_encoder.append( layers.BatchNormalization(name='bn_2') )
         self.board_encoder.append( layers.Flatten(name='flat_board') )
-        self.board_encoder.append( layers.Dense( 256,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='board_encoder' ) )
+        self.board_encoder.append( layers.Dense( 512,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='board_encoder' ) )
 
         ### combine color and board encoder
         self.combine_layer = layers.Concatenate( name='combin_input' )
 
         ### thinking
         self.actor = []
-        self.actor.append( layers.Dense( 512, activation='relu', kernel_initializer=tf.keras.initializers.GlorotNormal(), name='dense_1') )
+        self.actor.append( layers.Dense( 768, activation='relu', kernel_initializer=tf.keras.initializers.GlorotNormal(), name='dense_1') )
         self.actor.append( layers.Dropout(0.5 , name='dropout_1') )
-        self.actor.append( layers.Dense( 128, activation='relu', kernel_initializer=tf.keras.initializers.GlorotNormal(), name='dense_2') )
+        self.actor.append( layers.Dense( 256, activation='relu', kernel_initializer=tf.keras.initializers.GlorotNormal(), name='dense_2') )
         self.actor.append( layers.Dropout(0.5 , name='dropout_2') )
 
         ### output logits
@@ -102,4 +86,22 @@ class MyModel(tf.keras.Model):
             zz = act_layer(zz)
 
         output = self.out_logits(zz)
+        return output
+
+
+class MyModelTest(tf.keras.Model):
+    def __init__(self):
+        super(MyModelTest, self).__init__()
+
+        ## input
+        self.input_layer = layers.InputLayer(input_shape=(2,))
+        # self.input_layer  = tf.keras.Input(shape=(2,), name='input')
+        self.out_logits = layers.Dense( 1, activation='linear', kernel_initializer='RandomNormal', name='logits_out')
+        self.build((None,2,))
+
+
+    @tf.function
+    def call(self, inputs):
+        z = self.input_layer(inputs)
+        output = self.out_logits(z)
         return output

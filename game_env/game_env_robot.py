@@ -46,15 +46,29 @@ class Env():
         robot_won = False
 
         ## player's action
-        valid_move, game_end, won , board = self.game.move( self.player_color ,action)
+        valid_move, game_end, player_won, board = self.game.move( self.player_color ,action)
 
         if not valid_move:
             game_end = True
-            return self._get_state() , game_end, valid_move, player_won, robot_won
+            reward = -1
+            return self._get_state() , game_end, reward, valid_move, player_won, robot_won
+
+        if game_end: 
+            if player_won:
+                reward = 1.0
+            else:
+                ### draw
+                reward = 0.5
+
+            return self._get_state() , game_end, reward, valid_move, player_won, robot_won
 
         game_end, robot_won, valid_move = self._robot_move()
 
-        return self._get_state() , game_end, valid_move, player_won, robot_won
+        reward = 0.0
+        if game_end and robot_won:
+            reward = -0.5
+
+        return self._get_state() , game_end, reward, valid_move, player_won, robot_won
 
     def reset(self):
         self.game.reset()
