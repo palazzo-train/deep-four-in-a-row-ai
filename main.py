@@ -54,13 +54,6 @@ def print_board(state):
     xx = ge.board_to_ascii(board)
     print(xx)
 
-def color_index_to_name(color_index):
-    import game_env.game_env as ge
-
-    if color_index == ge.GREEN_INDEX:
-        return 'GREEN'
-    elif color_index == ge.RED_INDEX:
-        return 'RED'
 
 def test_ai():
     import tensorflow as tf
@@ -99,6 +92,13 @@ def test_ai():
         print('')
 
 
+def test_eval_model_ai():
+    import reinforcement_learning.model_ai.model_eval as me
+
+    stats = me.eval_model_ai(n=100)
+    print('*********************')
+    print(stats)
+    print(stats.sum(axis=0))
 
 def testtest111():
     import game_env.game_env_robot as ger
@@ -140,7 +140,8 @@ def testtest111():
 
 def reforcement_main():
     # testtest111()
-    test_ai()
+    # test_ai()
+    test_eval_model_ai()
 
 
 
