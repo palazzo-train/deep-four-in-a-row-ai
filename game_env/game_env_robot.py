@@ -12,9 +12,9 @@ def _color_index_to_color(index):
         return RED
 
 class Env():
-    def __init__(self):
+    def __init__(self, robot_level=-1):
         self.game = ge.GameEnv()
-        self.robot_level = -1
+        self.robot_level = robot_level
 
         self.robots_inventry = { 
             GREEN_INDEX : rp.getRobots(GREEN,RED, self.robot_level),
