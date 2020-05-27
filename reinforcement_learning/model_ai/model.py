@@ -19,9 +19,25 @@ import game_env.game_env as ge
 ##  my color = Green  0 or Red = 1
 ##
 
+class MyModelTest(tf.keras.Model):
+    def __init__(self):
+        super(MyModelTest, self).__init__()
+
+        ## input
+        self.input_layer = layers.InputLayer(input_shape=(2,))
+        # self.input_layer  = tf.keras.Input(shape=(2,), name='input')
+        self.out_logits = layers.Dense( 1, activation='linear', kernel_initializer='RandomNormal', name='logits_out')
+        self.build((None,2,))
+
+
+    @tf.function
+    def call(self, inputs):
+        z = self.input_layer(inputs)
+        output = self.out_logits(z)
+        return output
 
 class MyModel(tf.keras.Model):
-    def __init__(self, num_states, hidden_units, num_actions):
+    def __init__(self):
         super(MyModel, self).__init__()
 
         board_size = ge.NUM_ROW * ge.NUM_COL * ge.NUM_COLOR_STATE
@@ -29,11 +45,12 @@ class MyModel(tf.keras.Model):
         possible_move = ge.NUM_COL 
 
         n_features = board_size + color_size 
+        input_shape = (n_features,)
 
         l.info('total: {}  board : {} color : {} possible move : {}'.format( n_features, board_size, color_size, possible_move))
 
         ## input
-        self.input_layer = layers.InputLayer(input_shape=(n_features,))
+        self.input_layer = layers.InputLayer(input_shape=input_shape)
 
         ## input board
         self.input_board = layers.Lambda( lambda x : x[:,0:board_size] , name='board_input')
@@ -65,6 +82,7 @@ class MyModel(tf.keras.Model):
         ### output logits
         self.out_logits = layers.Dense( possible_move , activation='linear', kernel_initializer='RandomNormal', name='logits_out')
 
+        # self.build(input_shape=input_shape)
 
     @tf.function
     def call(self, inputs):

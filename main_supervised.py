@@ -32,7 +32,6 @@ def setupLogging():
 def test_robot():
     import supervised_learning.model_ai.robot as robot 
     import game_env.game_env as g
-    import supervised_learning.data_generator.random_robot_players as rp
     import supervised_learning.data_generator.game_manager  as gm
 
     working_folder = gc.C_save_model_current_folder 
