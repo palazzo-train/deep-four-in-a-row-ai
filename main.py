@@ -46,6 +46,57 @@ def test1():
     # m.summary(print_fn=l.info)
 
 
+def print_board(state):
+    import game_env.game_env as ge
+
+    board = state[0:126].reshape( 6,7,3)
+
+    xx = ge.board_to_ascii(board)
+    print(xx)
+
+def color_index_to_name(color_index):
+    import game_env.game_env as ge
+
+    if color_index == ge.GREEN_INDEX:
+        return 'GREEN'
+    elif color_index == ge.RED_INDEX:
+        return 'RED'
+
+def test_ai():
+    import tensorflow as tf
+    import game_env.game_env_robot as ger
+    import game_env.game_env as ge
+    import reinforcement_learning.model_ai.model as rm 
+
+
+    m = rm.MyModel()
+    env = ger.Env()
+
+    state = env.reset()
+    color_index = state[-1]
+
+    ai_color_name = color_index_to_name( color_index )
+
+    print('player color {}'.format( ai_color_name ) )
+
+    print_board(state)
+
+    game_end = False
+
+    while not game_end:
+        print(' ------- new step ---------------')
+        logits = m( np.atleast_2d(state.astype('float32')) )
+        probs = tf.nn.softmax(logits)
+        action = np.random.choice(7, p=probs.numpy()[0])
+
+        state , game_end = env.step( action  )
+        print_board(state)
+        print('player {} action {}, game_end {}'.format(ai_color_name, action, game_end ))
+        print('')
+        print('')
+        print('')
+
+
 
 def testtest111():
     import game_env.game_env_robot as ger
@@ -86,7 +137,8 @@ def testtest111():
 
 
 def reforcement_main():
-    testtest111()
+    # testtest111()
+    test_ai()
 
 
 
