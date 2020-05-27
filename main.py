@@ -87,7 +87,8 @@ def test_ai():
         print(' ------- new step ---------------')
         logits = m( np.atleast_2d(state) )
         probs = tf.nn.softmax(logits)
-        action = np.random.choice(7, p=probs.numpy()[0])
+
+        action = np.random.choice(env.action_size, p=probs.numpy()[0])
 
         state, game_end, valid_move, player_won, robot_won = env.step( action  )
         print_board(state)

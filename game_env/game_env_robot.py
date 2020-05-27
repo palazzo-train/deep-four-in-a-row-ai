@@ -11,7 +11,10 @@ def _color_index_to_color(index):
     elif index == RED_INDEX:
         return RED
 
+
 class Env():
+    action_size = ge.NUM_COL
+
     def __init__(self, robot_level=-1):
         self.game = ge.GameEnv()
         self.robot_level = robot_level
