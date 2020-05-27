@@ -14,6 +14,7 @@ def _color_index_to_color(index):
 
 class Env():
     action_size = ge.NUM_COL
+    state_size = ( ge.NUM_ROW * ge.NUM_COL * ge.NUM_COLOR_STATE ) + 1
 
     def __init__(self, robot_level=-1):
         self.game = ge.GameEnv()

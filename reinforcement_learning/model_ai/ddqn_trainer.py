@@ -16,6 +16,7 @@ def train(N=1000):
     gamma = gc.HP_GAMMA
     copy_step = gc.HP_DDQN_TARGET_NETWORK_UPDATE_STEP 
     num_actions = env.action_size
+    num_state = env.state_size
 
     max_experiences = gc.HP_EXPERIMENT_REPLAY_MAX 
     min_experiences = gc.HP_EXPERIMENT_REPLAY_MIN 
@@ -27,8 +28,8 @@ def train(N=1000):
     log_dir = os.path.join( gc.C_save_model_base_folder, gc.C_save_model_current_folder, 'logs' , current_time)
     summary_writer = tf.summary.create_file_writer(log_dir)
 
-    TrainNet = DQN(num_actions , gamma, max_experiences, min_experiences, batch_size, lr)
-    TargetNet = DQN(num_actions , gamma, max_experiences, min_experiences, batch_size, lr)
+    TrainNet = DQN(num_actions , num_state, gamma, max_experiences, min_experiences, batch_size, lr)
+    TargetNet = DQN(num_actions , num_state, gamma, max_experiences, min_experiences, batch_size, lr)
 
     total_rewards = np.empty(N)
     epsilon = gc.HP_EPSILON
@@ -119,8 +120,7 @@ def play_game(env, TrainNet, TargetNet, epsilon, copy_step):
 
         rewards += reward
 
-        exp = {'s': prev_observations, 'a': action, 'r': reward, 's2': observations, 'done': done}
-        TrainNet.add_experience(exp)
+        TrainNet.add_experience(prev_observations, action, reward, observations, done)
         loss = TrainNet.train(TargetNet)
         if isinstance(loss, int):
             losses.append(loss)
