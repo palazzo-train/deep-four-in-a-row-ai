@@ -81,15 +81,15 @@ def train(N=1000):
             TargetNet.model.save('saved_model/rein/targetnet')
             l.info('saving done')
 
-            player_won, robot_won, draw, reward, invalid_move = get_eval_stat()
+            player_won, robot_won, draw, eval_reward, invalid_move = get_eval_stat()
             with summary_writer.as_default():
                 tf.summary.scalar('player win', player_won, step=n)
                 tf.summary.scalar('robot win', robot_won, step=n)
                 tf.summary.scalar('draw game', draw, step=n)
-                tf.summary.scalar('eval reward', reward, step=n)
+                tf.summary.scalar('eval reward', eval_reward, step=n)
                 tf.summary.scalar('invalid move', invalid_move, step=n)
 
-            l.info('player_won, robot_won, reward, valid_move : {} , {} , {}, {}'.format( vv[0], vv[1], vv[2], vv[3]) )
+            l.info('player_won, robot_won, reward, invalid_move : {} , {} , {}, {}'.format( player_won, robot_won, eval_reward, invalid_move ))
 
         
     l.info("avg reward for last 100 episodes:", avg_rewards)
