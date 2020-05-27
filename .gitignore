@@ -132,6 +132,7 @@ dmypy.json
 ### 
 data/
 save_model/
+saved_model/
 project_data/
 temp_run/
 logs/
