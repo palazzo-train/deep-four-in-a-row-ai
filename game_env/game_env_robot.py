@@ -35,19 +35,23 @@ class Env():
             valid_move, game_end, won , board = self.game.move( self.robot_color ,c0)
             robot_player.move_valid_feedback(c0, valid_move)
 
-        return game_end, won
+        return game_end, won, valid_move
+
 
     def step(self, action):
+        player_won = False
+        robot_won = False
+
         ## player's action
         valid_move, game_end, won , board = self.game.move( self.player_color ,action)
 
         if not valid_move:
             game_end = True
-            return self._get_state() , game_end
+            return self._get_state() , game_end, valid_move, player_won, robot_won
 
-        self._robot_move()
+        game_end, robot_won, valid_move = self._robot_move()
 
-        return self._get_state() , game_end
+        return self._get_state() , game_end, valid_move, player_won, robot_won
 
     def reset(self):
         self.game.reset()

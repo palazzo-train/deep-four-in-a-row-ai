@@ -85,13 +85,14 @@ def test_ai():
 
     while not game_end:
         print(' ------- new step ---------------')
-        logits = m( np.atleast_2d(state.astype('float32')) )
+        logits = m( np.atleast_2d(state) )
         probs = tf.nn.softmax(logits)
         action = np.random.choice(7, p=probs.numpy()[0])
 
-        state , game_end = env.step( action  )
+        state, game_end, valid_move, player_won, robot_won = env.step( action  )
         print_board(state)
         print('player {} action {}, game_end {}'.format(ai_color_name, action, game_end ))
+        print('player won: {} , robot won: {}, valid move {}'.format(player_won, robot_won, valid_move))
         print('')
         print('')
         print('')
