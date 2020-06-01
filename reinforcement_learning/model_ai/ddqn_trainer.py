@@ -10,7 +10,7 @@ from . import model_eval as mevl
 import global_config_reinforcement_learning as gc
 
 # N = 50000
-def train(N=1000):
+def train(N):
     env = ger.Env()
 
     gamma = gc.HP_GAMMA

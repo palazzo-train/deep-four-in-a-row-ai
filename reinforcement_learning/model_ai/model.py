@@ -25,7 +25,7 @@ class MyModel(tf.keras.Model):
         super(MyModel, self).__init__()
 
         board_size = ge.NUM_ROW * ge.NUM_COL * ge.NUM_COLOR_STATE
-        color_size = 1
+        color_size = 2
         possible_move = ge.NUM_COL 
 
         n_features = board_size + color_size 

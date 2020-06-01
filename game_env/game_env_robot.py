@@ -4,17 +4,20 @@ from .game_env import RED, GREEN , BLANK, GREEN_INDEX , RED_INDEX , BLANK_INDEX
 from . import random_robot_players as rp
 
 
+PLAYER_RED_STATE = np.array([0,1])
+PLAYER_GREEN_STATE = np.array([1,0])
 
 def _color_index_to_color(index):
     if index == GREEN_INDEX:
-        return GREEN
+        return GREEN, PLAYER_GREEN_STATE
     elif index == RED_INDEX:
-        return RED
+        return RED, PLAYER_RED_STATE
+
 
 
 class Env():
     action_size = ge.NUM_COL
-    state_size = ( ge.NUM_ROW * ge.NUM_COL * ge.NUM_COLOR_STATE ) + 1
+    state_size = ( ge.NUM_ROW * ge.NUM_COL * ge.NUM_COLOR_STATE ) + 2
 
     def __init__(self, robot_level=-1):
         self.game = ge.GameEnv()
@@ -28,7 +31,7 @@ class Env():
 
     def _get_state(self):
         b = self.game.board.reshape(-1)
-        return np.append(b, [self.player_color_index])
+        return np.append(b, [self.player_color_state])
 
     def _robot_move(self):
         robot_player = self.current_robot
@@ -77,8 +80,8 @@ class Env():
         self.player_color_index = int(np.random.choice(2))
         self.robot_color_index = int((self.player_color_index + 1 ) % 2)
         
-        self.player_color = _color_index_to_color(self.player_color_index)
-        self.robot_color = _color_index_to_color(self.robot_color_index)
+        self.player_color, self.player_color_state  = _color_index_to_color(self.player_color_index)
+        self.robot_color , self.robot_color_state = _color_index_to_color(self.robot_color_index)
         self.first_move_color_index = int(np.random.choice(2))
 
         robots = self.robots_inventry[self.robot_color_index]

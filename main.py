@@ -140,7 +140,7 @@ def testtest111():
 def test_train():
     import reinforcement_learning.model_ai.ddqn_trainer as trainer
 
-    trainer.train(500000)
+    trainer.train(5000000)
 
 def reforcement_main():
     # testtest111()
