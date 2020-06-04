@@ -1,8 +1,8 @@
 import numpy as np
+from .game_env import NUM_COL , NUM_ROW 
 
-n_row = 6
-n_col = 7
-n_in_row = 4
+n_row = NUM_ROW
+n_col = NUM_COL
 
 
 def create_win_mask( i_row, i_col, n_in_row, row_step, col_step, left_row_step, left_col_step, right_row_step, right_col_step):

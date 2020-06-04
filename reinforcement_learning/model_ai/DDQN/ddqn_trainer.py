@@ -37,7 +37,7 @@ def train(N):
     min_epsilon = gc.HP_MIN_EPSILON 
 
     l.info('preparing to run for N = {}'.format(N))
-    tmp_state = env.reset()
+    tmp_state, player_color_index = env.reset()
     tmp_state = np.atleast_2d(tmp_state)
     TrainNet.model(tmp_state)
     TargetNet.model(tmp_state)
@@ -111,7 +111,7 @@ def play_game(env, TrainNet, TargetNet, epsilon, copy_step):
     rewards = 0
     iter = 0
     done = False
-    observations = env.reset()
+    observations , player_color_index = env.reset()
     losses = list()
     while not done:
         action = TrainNet.get_action(observations, epsilon)

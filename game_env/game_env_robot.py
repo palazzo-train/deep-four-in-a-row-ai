@@ -92,8 +92,16 @@ class Env():
         if self.first_move_color_index == self.robot_color_index:
             self._robot_move()
 
-        return self._get_state()
+        return self._get_state(), self.player_color_index
 
 
 
 
+
+class Env_v2(Env):
+  def __init__(self, robot_level=-1):
+    super().__init__(robot_level)
+
+  def _get_state(self):
+    b = self.game.board
+    return b

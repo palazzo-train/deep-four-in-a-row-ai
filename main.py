@@ -6,7 +6,7 @@ import sys, os
 from main_supervised import supervised_main as supervised_main
 
 import reinforcement_learning.model_ai.model as AiModel 
-import reinforcement_learning.model_ai.DQN as DQN 
+# import reinforcement_learning.model_ai.DDQN.DQN as DQN 
 
 import global_config_supervised_learning as gc
 
@@ -27,7 +27,7 @@ def setupLogging():
     consoleHandler.setFormatter(logFormatter)
     rootLogger.addHandler(consoleHandler)
 
-    rootLogger.setLevel(logging.DEBUG)
+    rootLogger.setLevel(logging.INFO)
 
 
 
@@ -142,11 +142,23 @@ def test_train():
 
     trainer.train(5000000)
 
+def test_a3c():
+    import reinforcement_learning.model_ai.A3C.A3CTrainer as trainer
+
+    trainer.train()
+
+def test_a2c():
+    import reinforcement_learning.model_ai.A2C.A2CTrainer as trainer
+
+    trainer.train()
+
 def reforcement_main():
     # testtest111()
     # test_ai()
     # test_eval_model_ai()
-    test_train()
+    # test_train()
+    # test_a3c()
+    test_a2c()
 
 
 

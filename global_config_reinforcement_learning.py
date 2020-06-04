@@ -7,6 +7,9 @@ MODE_ENABLE_MODEL_ROBOT_EVULATION = True
 C_save_data_folder = 'project_data/reinforcement/data/working'
 C_save_model_base_folder = 'project_data/reinforcement/saved_model'
 C_save_model_current_folder = 'working'
+C_save_a3c_worker= 'project_data/reinforcement/a3c_worker'
+
+
 
 
 
