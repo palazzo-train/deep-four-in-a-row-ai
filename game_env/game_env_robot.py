@@ -2,6 +2,7 @@ import numpy as np
 from . import game_env as ge
 from .game_env import RED, GREEN , BLANK, GREEN_INDEX , RED_INDEX , BLANK_INDEX 
 from . import random_robot_players as rp
+import game_env.feature_plans as fp
 
 
 PLAYER_RED_STATE = np.array([0,1])
@@ -18,6 +19,13 @@ def _color_index_to_color(index):
 class Env():
     action_size = ge.NUM_COL
     state_size = ( ge.NUM_ROW * ge.NUM_COL * ge.NUM_COLOR_STATE ) + 2
+
+    reward_invalid = -2
+    reward_valid_move = 0
+    reward_player_win = 1
+    reward_draw_game = 0.5
+    reward_player_loss = -1
+
 
     def __init__(self, robot_level=-1):
         self.game = ge.GameEnv()
@@ -54,25 +62,31 @@ class Env():
 
         if not valid_move:
             game_end = True
-            reward = -1
+            reward = self.reward_invalid 
             return self._get_state() , game_end, reward, valid_move, player_won, robot_won
 
         if game_end: 
             if player_won:
-                reward = 1.0
+                reward = self.reward_player_win 
             else:
                 ### draw
-                reward = 0.5
+                reward = self.reward_draw_game
 
             return self._get_state() , game_end, reward, valid_move, player_won, robot_won
 
         game_end, robot_won, valid_move = self._robot_move()
 
-        reward = 0.0
+        reward = self.reward_valid_move
         if game_end and robot_won:
-            reward = -0.5
+            reward = self.reward_player_loss 
 
+        return self.step_return_value(game_end, reward, valid_move, player_won, robot_won)
+
+    def step_return_value(self, game_end, reward, valid_move , player_won , robot_won ):
         return self._get_state() , game_end, reward, valid_move, player_won, robot_won
+
+    def reset_return_value(self):
+        return self._get_state(), self.player_color_index
 
     def reset(self):
         self.game.reset()
@@ -92,16 +106,66 @@ class Env():
         if self.first_move_color_index == self.robot_color_index:
             self._robot_move()
 
-        return self._get_state(), self.player_color_index
+        return self.reset_return_value()
 
 
 
 
+def _board_to_feature_plans(game_board, next_row_pos , player_color_index , robot_color_index):
+#   print('***************')
+#   print(obs.shape)
 
-class Env_v2(Env):
-  def __init__(self, robot_level=-1):
-    super().__init__(robot_level)
+    player_board = game_board[:,:,player_color_index]
+    robot_board = game_board[:,:,robot_color_index]
+    blank_board = game_board[:,:,BLANK_INDEX]
 
-  def _get_state(self):
-    b = self.game.board
-    return b
+    all_one = np.ones( [ ge.NUM_ROW, ge.NUM_COL])
+    all_zero = np.zeros( [ ge.NUM_ROW, ge.NUM_COL])
+
+    next_move = np.zeros( [ ge.NUM_ROW, ge.NUM_COL])
+    row_pos= next_row_pos.copy()
+    row_pos[row_pos >= 6] = 0
+    next_move[ row_pos , np.arange(ge.NUM_COL)] = 1
+
+    ### play board first, then opponent (robot), then blank
+    features = [ player_board, robot_board, blank_board , next_move, all_one]
+
+    for index in [player_color_index, robot_color_index]:
+        for n_in_row in [ 2, 3 ,4] :
+            board = game_board[:,:,index]
+            feature = fp.get_feature(board, n_in_row, ge.NUM_ROW, ge.NUM_COL)
+
+            features.append(feature)
+
+    features.append(all_zero)
+    features = np.stack(features, axis=-1)
+
+    print('********')
+    print(features[:,:,0])
+    print(features[:,:,1])
+    print(features[:,:,3])
+
+    return features
+
+class GymEnv(Env):
+    def __init__(self, robot_level=-1):
+        super().__init__(robot_level)
+
+    def _get_state(self):
+        features = _board_to_feature_plans(self.game.board, 
+                                            self.game.next_row_pos ,
+                                            self.player_color_index ,
+                                            self.robot_color_index)
+        return features 
+
+    def step_return_value(self, game_end, reward, valid_move , player_won , robot_won ):
+        observation, = self._get_state()
+        done = game_end
+        info = { 'valid_move' : valid_move , 
+                  'player_won' : player_won ,
+                  'robot_won' : robot_won }
+
+        return observation, reward, done, info 
+
+    def reset_return_value(self):
+        return self._get_state()

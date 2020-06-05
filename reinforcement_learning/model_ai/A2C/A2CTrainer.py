@@ -4,7 +4,7 @@ import game_env.game_env_robot as ger
 
 
 def train():
-    env = ger.Env_v2()
+    env = ger.GymEnv()
     num_actions = env.action_size
     # num_state = env.state_size
 

@@ -1,4 +1,6 @@
+import gym
 import logging
+import argparse
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -6,41 +8,48 @@ import tensorflow.keras.layers as kl
 import tensorflow.keras.losses as kls
 import tensorflow.keras.optimizers as ko
 
-import game_env.feature_plans as fp
-from game_env.game_env import NUM_COL , NUM_ROW , NUM_COLOR_STATE , NUM_IN_A_ROW 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-b', '--batch_size', type=int, default=64)
+parser.add_argument('-n', '--num_updates', type=int, default=250)
+parser.add_argument('-lr', '--learning_rate', type=float, default=7e-3)
+parser.add_argument('-r', '--render_test', action='store_true', default=False)
+parser.add_argument('-p', '--plot_results', action='store_true', default=False)
 
 
+class ProbabilityDistribution(tf.keras.Model):
+  def call(self, logits, **kwargs):
+    # Sample a random categorical action from the given logits.
+    return tf.squeeze(tf.random.categorical(logits, 1), axis=-1)
 
-def observation_to_state(obs, player_color_index):
-  print('***************')
-  print(obs.shape)
 
-  robot_index = int((player_color_index + 1) % 2)
+class Model(tf.keras.Model):
+  def __init__(self, num_actions):
+    super().__init__('mlp_policy')
+    # Note: no tf.get_variable(), just simple Keras API!
+    self.hidden1 = kl.Dense(128, activation='relu')
+    self.hidden2 = kl.Dense(128, activation='relu')
+    self.value = kl.Dense(1, name='value')
+    # Logits are unnormalized log probabilities.
+    self.logits = kl.Dense(num_actions, name='policy_logits')
+    self.dist = ProbabilityDistribution()
 
-  player_board = obs[:,:,player_color_index]
-  robot_board = obs[:,:,robot_index]
-  blank_board = obs[:,:,2]
+  def call(self, inputs, **kwargs):
+    # Inputs is a numpy array, convert to a tensor.
+    x = tf.convert_to_tensor(inputs)
+    # Separate hidden layers from the same input tensor.
+    hidden_logs = self.hidden1(x)
+    hidden_vals = self.hidden2(x)
+    return self.logits(hidden_logs), self.value(hidden_vals)
 
-  all_one = np.ones( [ NUM_ROW, NUM_COL])
-  all_zero = np.zeros( [ NUM_ROW, NUM_COL])
-
-  ### play board first, then opponent (robot), then blank
-  features = [ player_board, robot_board, blank_board , all_one]
-
-  for index in [player_color_index, robot_index]:
-    for n_in_row in [ 2, 3 , 4] :
-      board = obs[:,:,index]
-      feature = fp.get_feature(board, n_in_row, NUM_ROW, NUM_COL)
-
-      features.append(feature)
-
-  features.append(all_zero)
-  features = np.stack(features, axis=-1)
-
-  return features
-
-state_shape = 6 * 7
-
+  def action_value(self, obs):
+    # Executes `call()` under the hood.
+    logits, value = self.predict_on_batch(obs)
+    action = self.dist.predict_on_batch(logits)
+    # Another way to sample actions:
+    #   action = tf.random.categorical(logits, 1)
+    # Will become clearer later why we don't use it.
+    return np.squeeze(action, axis=-1), np.squeeze(value, axis=-1)
 
 
 class A2CAgent:
@@ -58,30 +67,22 @@ class A2CAgent:
 
   def train(self, env, batch_sz=64, updates=250):
     # Storage helpers for a single batch of data.
-    actions = np.empty(batch_sz, dtype=np.int32)
+    actions = np.empty((batch_sz,), dtype=np.int32)
     rewards, dones, values = np.empty((3, batch_sz))
-
-    observations = np.empty((batch_sz, state_shape))
-
-    print('****skdsdf')
-    print(observations.shape)
-
+    observations = np.empty((batch_sz,) + env.observation_space.shape)
     # Training loop: collect samples, send to optimizer, repeat updates times.
     ep_rewards = [0.0]
     next_obs = env.reset()
     for update in range(updates):
       for step in range(batch_sz):
-        cur_obs = next_obs.copy()
-        observations[step] = observation_to_state(cur_obs, player_color_index)
+        observations[step] = next_obs.copy()
         actions[step], values[step] = self.model.action_value(next_obs[None, :])
-
-        next_obs, done , reward, valid_move, player_won, robot_won = env.step( actions[step]  )
-        rewards[step], dones[step] = reward, done
+        next_obs, rewards[step], dones[step], _ = env.step(actions[step])
 
         ep_rewards[-1] += rewards[step]
         if dones[step]:
           ep_rewards.append(0.0)
-          next_obs , player_color_index = env.reset()
+          next_obs = env.reset()
           logging.info("Episode: %03d, Reward: %03d" % (len(ep_rewards) - 1, ep_rewards[-2]))
 
       _, next_value = self.model.action_value(next_obs[None, :])
@@ -91,16 +92,15 @@ class A2CAgent:
       # Performs a full training step on the collected batch.
       # Note: no need to mess around with gradients, Keras API handles it.
       losses = self.model.train_on_batch(observations, [acts_and_advs, returns])
-      logging.info("[%d/%d] Losses: %s" % (update + 1, updates, losses))
+      logging.debug("[%d/%d] Losses: %s" % (update + 1, updates, losses))
 
     return ep_rewards
 
   def test(self, env, render=False):
-    obs, player_color_index, done, ep_reward = env.reset(), False, 0
+    obs, done, ep_reward = env.reset(), False, 0
     while not done:
       action, _ = self.model.action_value(obs[None, :])
-      next_obs, done , reward, valid_move, player_won, robot_won = env.step( action  )
-
+      obs, reward, done, _ = env.step(action)
       ep_reward += reward
       if render:
         env.render()
@@ -137,3 +137,23 @@ class A2CAgent:
     # We want to minimize policy and maximize entropy losses.
     # Here signs are flipped because the optimizer minimizes.
     return policy_loss - self.entropy_c * entropy_loss
+
+
+if __name__ == '__main__':
+  args = parser.parse_args()
+  logging.getLogger().setLevel(logging.INFO)
+
+  env = gym.make('CartPole-v0')
+  model = Model(num_actions=env.action_space.n)
+  agent = A2CAgent(model, args.learning_rate)
+
+  rewards_history = agent.train(env, args.batch_size, args.num_updates)
+  print("Finished training. Testing...")
+  print("Total Episode Reward: %d out of 200" % agent.test(env, args.render_test))
+
+  if args.plot_results:
+    plt.style.use('seaborn')
+    plt.plot(np.arange(0, len(rewards_history), 10), rewards_history[::10])
+    plt.xlabel('Episode')
+    plt.ylabel('Total Reward')
+    plt.show()

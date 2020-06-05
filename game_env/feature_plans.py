@@ -5,6 +5,7 @@ n_row = NUM_ROW
 n_col = NUM_COL
 
 
+
 def create_win_mask( i_row, i_col, n_in_row, row_step, col_step, left_row_step, left_col_step, right_row_step, right_col_step):
     win_masks = []
     check_masks = []
@@ -97,7 +98,7 @@ def get_board_win_mask(n_row, n_col, n_in_row):
     return matrix_all
 
 def get_feature(board, n_in_row, n_row, n_col):
-    matrix_all = get_board_win_mask(n_row, n_col, n_in_row)
+    matrix_all = matrix_all_dict[n_in_row]
 
     feature = np.zeros( [n_row, n_col])
     for i_row in range(n_row):
@@ -109,3 +110,11 @@ def get_feature(board, n_in_row, n_row, n_col):
             feature[i_row, i_col] =  ( (next_board * win_masks * check_masks).sum(axis=-1).sum(axis=-1).max()  == n_in_row )
 
     return feature
+
+matrix_all_2 = get_board_win_mask(n_row, n_col, 2)
+matrix_all_3 = get_board_win_mask(n_row, n_col, 3)
+matrix_all_4 = get_board_win_mask(n_row, n_col, 4)
+
+matrix_all_dict = { 2 : matrix_all_2, 
+                    3 : matrix_all_3,
+                    4 : matrix_all_4}
