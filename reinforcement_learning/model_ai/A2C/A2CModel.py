@@ -15,11 +15,57 @@ class ProbabilityDistribution(tf.keras.Model):
     return tf.squeeze(tf.random.categorical(logits, 1), axis=-1)
 
 class A2CModel(tf.keras.Model):
-  def __init__(self, num_actions):
-    super().__init__('four_in_a_row_policy')
-    # Note: no tf.get_variable(), just simple Keras API!
+  input_size = ( NUM_ROW * NUM_COL * NUM_FEATURE_PLAN )
 
+  def call_arch2(self, inputs, **kwargs):
+    x = tf.convert_to_tensor(inputs)
+    # Separate hidden layers from the same input tensor.
+    x = self.input_board(x)
+    x = self.common_encoder(x)
+    x = self.common_encoder2(x)
 
+    hidden_logs = self.logits_encoder(x)
+    hidden_vals = self.value_encoder(x)
+
+    return self.logits(hidden_logs), self.value(hidden_vals)
+
+  def init_arch2(self, num_actions):
+    self.input_board = kl.Reshape([NUM_ROW ,NUM_COL,NUM_FEATURE_PLAN] , name='board_input')
+
+    self.common_encoder = kl.Conv2D(filters=64,kernel_size=[4,4], 
+                            activation='relu' , padding='same',
+                            kernel_initializer='random_normal', name='common_conv2d_1') 
+    self.common_encoder2 = kl.Flatten(name='common_flat')
+
+    ##### logits network ###############
+    self.logits_encoder = kl.Dense( 96,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='logits_encoder' ) 
+
+    ##### value network ###############
+    self.value_encoder = kl.Dense( 64,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='value_encoder' ) 
+
+    ### value output
+    self.value = kl.Dense(1, name='value')
+    # Logits are unnormalized log probabilities.
+    self.logits = kl.Dense(num_actions, name='policy_logits')
+    self.dist = ProbabilityDistribution()
+
+  def call_arch1(self, inputs, **kwargs):
+    x = tf.convert_to_tensor(inputs)
+    # Separate hidden layers from the same input tensor.
+    x = self.input_board(x)
+    x = self.common_encoder(x)
+
+    hidden_logs = x
+    for llayer in self.logits_encoder:
+      hidden_logs = llayer(hidden_logs)
+
+    hidden_vals = x
+    for llayer in self.value_encoder:
+      hidden_vals= llayer(hidden_vals)
+
+    return self.logits(hidden_logs), self.value(hidden_vals)
+
+  def init_arch1(self, num_actions):
     self.input_board = kl.Reshape([NUM_ROW ,NUM_COL,NUM_FEATURE_PLAN] , name='board_input')
 
     self.common_encoder = kl.Conv2D(filters=128,kernel_size=[4,4], 
@@ -60,22 +106,13 @@ class A2CModel(tf.keras.Model):
     self.logits = kl.Dense(num_actions, name='policy_logits')
     self.dist = ProbabilityDistribution()
 
+  def __init__(self, num_actions):
+    super().__init__('four_in_a_row_policy')
+    # Note: no tf.get_variable(), just simple Keras API!
+    self.init_arch2(num_actions)
+
   def call(self, inputs, **kwargs):
-    # Inputs is a numpy array, convert to a tensor.
-    x = tf.convert_to_tensor(inputs)
-    # Separate hidden layers from the same input tensor.
-    x = self.input_board(x)
-    x = self.common_encoder(x)
-
-    hidden_logs = x
-    for llayer in self.logits_encoder:
-      hidden_logs = llayer(hidden_logs)
-
-    hidden_vals = x
-    for llayer in self.value_encoder:
-      hidden_vals= llayer(hidden_vals)
-
-    return self.logits(hidden_logs), self.value(hidden_vals)
+    return self.call_arch2(inputs, **kwargs)
 
   def action_value(self, obs):
     # Executes `call()` under the hood.

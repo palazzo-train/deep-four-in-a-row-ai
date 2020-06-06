@@ -42,13 +42,34 @@ class A2CAgent:
       # Define separate losses for policy logits and value estimate.
       loss=[self._logits_loss, self._value_loss])
 
-  def train(self, env, batch_sz=64, updates=250000):
+    tmp_input = np.zeros( self.model.input_size )
+    self.model.action_value( tmp_input[None,:])
+    self.model.summary(print_fn=logging.info)
 
+  def train(self, env, batch_sz=64):
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     log_dir = os.path.join( gc.C_save_model_base_folder, gc.C_save_model_current_folder, 'logs' , current_time)
-    print('logdir {}'.format(log_dir))
     summary_writer = tf.summary.create_file_writer(log_dir)
+
+    for n in range(100):
+      ep_rewards , losses = self.train_in_group(summary_writer, env, batch_sz, updates=20)
+      ep_rewards = np.array(ep_rewards)
+      num_win = (ep_rewards == env.reward_player_win ).sum()
+      num_loss = (ep_rewards == env.reward_player_loss ).sum()
+      num_draw = (ep_rewards == env.reward_draw_game).sum()
+      avg_rewards = np.mean(ep_rewards)
+      logging.info('Group Avg Reward: {}, losses : {}'.format(avg_rewards, losses))
+      with summary_writer.as_default():
+        tf.summary.scalar('episode reward', avg_rewards, step=n)
+        tf.summary.scalar('game/win', num_win, step=n)
+        tf.summary.scalar('game/loss', num_loss, step=n)
+        tf.summary.scalar('game/draw', num_draw, step=n)
+        tf.summary.scalar('losses 0', losses[0], step=n)
+        tf.summary.scalar('losses 1', losses[1], step=n)
+        tf.summary.scalar('losses 2', losses[2], step=n)
+
+  def train_in_group(self, summary_writer, env, batch_sz, updates):
 
     # Storage helpers for a single batch of data.
     actions = np.empty(batch_sz, dtype=np.int32)
@@ -75,11 +96,9 @@ class A2CAgent:
         ep_rewards[-1] += rewards[step]
         if dones[step]:
           ep_rewards.append(0.0)
+
           next_obs = env.reset()
-          logging.info("Episode: %03d, Reward: %03d" % (len(ep_rewards) - 1, ep_rewards[-2]))
-          if update > 100:
-            with summary_writer.as_default():
-                tf.summary.scalar('episode reward', ep_rewards[-2], step=step_n)
+          # logging.info("Episode: %03d, Reward: %03d" % (len(ep_rewards) - 1, ep_rewards[-2]))
 
         if reward == -2:
           print('reward = -2')
@@ -91,15 +110,11 @@ class A2CAgent:
       acts_and_advs = np.concatenate([actions[:, None], advs[:, None]], axis=-1)
       # Performs a full training step on the collected batch.
       # Note: no need to mess around with gradients, Keras API handles it.
-      losses = self.model.train_on_batch(observations, [acts_and_advs, returns])
-      logging.info("[%d/%d] Losses: %s" % (update + 1, updates, losses))
-      if update > 100:
-        with summary_writer.as_default():
-              tf.summary.scalar('losses 0', losses[0], step=update)
-              tf.summary.scalar('losses 1', losses[1], step=update)
-              tf.summary.scalar('losses 2', losses[2], step=update)
 
-    return ep_rewards
+      losses = self.model.train_on_batch(observations, [acts_and_advs, returns])
+      # logging.info("[%d/%d] Losses: %s" % (update + 1, updates, losses))
+
+    return ep_rewards, losses
 
   def test(self, env, render=False):
     obs, done, ep_reward = env.reset(), False, 0
@@ -115,6 +130,7 @@ class A2CAgent:
   def _returns_advantages(self, rewards, dones, values, next_value):
     # `next_value` is the bootstrap value estimate of the future state (critic).
     returns = np.append(np.zeros_like(rewards), next_value, axis=-1)
+
     # Returns are calculated as discounted sum of future rewards.
     for t in reversed(range(rewards.shape[0])):
       returns[t] = rewards[t] + self.gamma * returns[t + 1] * (1 - dones[t])
