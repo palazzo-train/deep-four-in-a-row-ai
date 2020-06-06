@@ -5,6 +5,9 @@ import tensorflow.keras.layers as kl
 import tensorflow.keras.losses as kls
 import tensorflow.keras.optimizers as ko
 
+from game_env.game_env_robot import FEATURE_PLAN_INDEX_VALID_MOVE, NUM_FEATURE_PLAN 
+from game_env.game_env import NUM_ROW, NUM_COL
+
 
 class ProbabilityDistribution(tf.keras.Model):
   def call(self, logits, **kwargs):
@@ -32,12 +35,36 @@ class A2CModel(tf.keras.Model):
 
   def action_value(self, obs):
     # Executes `call()` under the hood.
+    feature_plans = obs.reshape( NUM_ROW , NUM_COL, NUM_FEATURE_PLAN )
+
+    valid_move_plan = feature_plans[:,:,FEATURE_PLAN_INDEX_VALID_MOVE]
+    valid_move = valid_move_plan.sum(axis=0).reshape(-1,NUM_COL)
+
     logits, value = self.predict_on_batch(obs)
-    action = self.dist.predict_on_batch(logits)
+
+    ## remove invalid move
+    logits2 = logits.copy()
+    logits2[ valid_move == 0 ] = -np.Inf 
+    action = self.dist.predict_on_batch(logits2)
+
     # Another way to sample actions:
     #   action = tf.random.categorical(logits, 1)
     # Will become clearer later why we don't use it.
     return np.squeeze(action, axis=-1), np.squeeze(value, axis=-1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ReferenceModel(tf.keras.Model):
   def __init__(self, num_actions):
@@ -65,4 +92,6 @@ class ReferenceModel(tf.keras.Model):
     # Another way to sample actions:
     #   action = tf.random.categorical(logits, 1)
     # Will become clearer later why we don't use it.
+
+
     return np.squeeze(action, axis=-1), np.squeeze(value, axis=-1)

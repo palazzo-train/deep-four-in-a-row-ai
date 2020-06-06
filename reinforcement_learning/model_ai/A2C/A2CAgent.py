@@ -10,38 +10,22 @@ import game_env.feature_plans as fp
 from game_env.game_env import NUM_COL , NUM_ROW , NUM_COLOR_STATE , NUM_IN_A_ROW 
 
 
+g_i = 0
+def debug_print(action, obs, reward, done):
+  global g_i
+  print('********************* step {}'.format(g_i))
+  g_i += 1
+  
+  for i in range( 12 ):
+    print('plan {}'.format(i))
+    bb = (obs.reshape(6,7,-1)[:,:,i])
+    bb = np.flip(bb, axis=0)
+    print(bb)
 
-def observation_to_state(obs, player_color_index):
-  print('***************')
-  print(obs.shape)
-
-  robot_index = int((player_color_index + 1) % 2)
-
-  player_board = obs[:,:,player_color_index]
-  robot_board = obs[:,:,robot_index]
-  blank_board = obs[:,:,2]
-
-  all_one = np.ones( [ NUM_ROW, NUM_COL])
-  all_zero = np.zeros( [ NUM_ROW, NUM_COL])
-
-  ### play board first, then opponent (robot), then blank
-  features = [ player_board, robot_board, blank_board , all_one]
-
-  for index in [player_color_index, robot_index]:
-    for n_in_row in [ 2, 3 , 4] :
-      board = obs[:,:,index]
-      feature = fp.get_feature(board, n_in_row, NUM_ROW, NUM_COL)
-
-      features.append(feature)
-
-  features.append(all_zero)
-  features = np.stack(features, axis=-1)
-
-  return features
-
-state_shape = 6 * 7
-
-
+  print('  action, reward, done : {} , {}, {}'.format(action, reward, done))
+  print('')
+  print('')
+  print('')
 
 class A2CAgent:
   def __init__(self, model, lr=7e-3, gamma=0.99, value_c=0.5, entropy_c=1e-4):
@@ -61,28 +45,30 @@ class A2CAgent:
     actions = np.empty(batch_sz, dtype=np.int32)
     rewards, dones, values = np.empty((3, batch_sz))
 
-    observations = np.empty((batch_sz, state_shape))
-
-    print('****skdsdf')
-    print(observations.shape)
+    observations = np.empty((batch_sz, env.state_size))
 
     # Training loop: collect samples, send to optimizer, repeat updates times.
     ep_rewards = [0.0]
     next_obs = env.reset()
     for update in range(updates):
       for step in range(batch_sz):
-        cur_obs = next_obs.copy()
-        observations[step] = observation_to_state(cur_obs, player_color_index)
+        observations[step] = next_obs.copy()
         actions[step], values[step] = self.model.action_value(next_obs[None, :])
 
-        next_obs, done , reward, valid_move, player_won, robot_won = env.step( actions[step]  )
+        next_obs, reward, done, _ = env.step( actions[step]  )
+        # debug_print(actions[step], observations[step], reward, done)
+
         rewards[step], dones[step] = reward, done
 
         ep_rewards[-1] += rewards[step]
         if dones[step]:
           ep_rewards.append(0.0)
-          next_obs , player_color_index = env.reset()
+          next_obs = env.reset()
           logging.info("Episode: %03d, Reward: %03d" % (len(ep_rewards) - 1, ep_rewards[-2]))
+
+        if reward == -2:
+          print('reward = -2')
+          quit()
 
       _, next_value = self.model.action_value(next_obs[None, :])
       returns, advs = self._returns_advantages(rewards, dones, values, next_value)
@@ -96,10 +82,10 @@ class A2CAgent:
     return ep_rewards
 
   def test(self, env, render=False):
-    obs, player_color_index, done, ep_reward = env.reset(), False, 0
+    obs, done, ep_reward = env.reset(), False, 0
     while not done:
       action, _ = self.model.action_value(obs[None, :])
-      next_obs, done , reward, valid_move, player_won, robot_won = env.step( action  )
+      next_obs, reward, done , _ = env.step( action  )
 
       ep_reward += reward
       if render:
