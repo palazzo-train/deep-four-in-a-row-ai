@@ -1,3 +1,4 @@
+import datetime,os,sys
 import logging
 import numpy as np
 import tensorflow as tf
@@ -8,6 +9,7 @@ import tensorflow.keras.optimizers as ko
 
 import game_env.feature_plans as fp
 from game_env.game_env import NUM_COL , NUM_ROW , NUM_COLOR_STATE , NUM_IN_A_ROW 
+import global_config_reinforcement_learning as gc
 
 
 g_i = 0
@@ -40,7 +42,14 @@ class A2CAgent:
       # Define separate losses for policy logits and value estimate.
       loss=[self._logits_loss, self._value_loss])
 
-  def train(self, env, batch_sz=64, updates=250):
+  def train(self, env, batch_sz=64, updates=250000):
+
+    current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    log_dir = os.path.join( gc.C_save_model_base_folder, gc.C_save_model_current_folder, 'logs' , current_time)
+    print('logdir {}'.format(log_dir))
+    summary_writer = tf.summary.create_file_writer(log_dir)
+
     # Storage helpers for a single batch of data.
     actions = np.empty(batch_sz, dtype=np.int32)
     rewards, dones, values = np.empty((3, batch_sz))
@@ -50,8 +59,11 @@ class A2CAgent:
     # Training loop: collect samples, send to optimizer, repeat updates times.
     ep_rewards = [0.0]
     next_obs = env.reset()
+
+    step_n = 0
     for update in range(updates):
       for step in range(batch_sz):
+        step_n += 1
         observations[step] = next_obs.copy()
         actions[step], values[step] = self.model.action_value(next_obs[None, :])
 
@@ -65,6 +77,9 @@ class A2CAgent:
           ep_rewards.append(0.0)
           next_obs = env.reset()
           logging.info("Episode: %03d, Reward: %03d" % (len(ep_rewards) - 1, ep_rewards[-2]))
+          if update > 100:
+            with summary_writer.as_default():
+                tf.summary.scalar('episode reward', ep_rewards[-2], step=step_n)
 
         if reward == -2:
           print('reward = -2')
@@ -78,6 +93,11 @@ class A2CAgent:
       # Note: no need to mess around with gradients, Keras API handles it.
       losses = self.model.train_on_batch(observations, [acts_and_advs, returns])
       logging.info("[%d/%d] Losses: %s" % (update + 1, updates, losses))
+      if update > 100:
+        with summary_writer.as_default():
+              tf.summary.scalar('losses 0', losses[0], step=update)
+              tf.summary.scalar('losses 1', losses[1], step=update)
+              tf.summary.scalar('losses 2', losses[2], step=update)
 
     return ep_rewards
 

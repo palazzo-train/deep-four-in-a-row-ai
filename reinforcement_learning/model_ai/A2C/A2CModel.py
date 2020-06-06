@@ -18,8 +18,43 @@ class A2CModel(tf.keras.Model):
   def __init__(self, num_actions):
     super().__init__('four_in_a_row_policy')
     # Note: no tf.get_variable(), just simple Keras API!
-    self.hidden1 = kl.Dense(128, activation='relu')
-    self.hidden2 = kl.Dense(128, activation='relu')
+
+
+    self.input_board = kl.Reshape([NUM_ROW ,NUM_COL,NUM_FEATURE_PLAN] , name='board_input')
+
+    self.common_encoder = kl.Conv2D(filters=128,kernel_size=[4,4], 
+                            activation='relu' , padding='same',
+                            kernel_initializer='random_normal', name='common_conv2d_1') 
+
+    ##### logits network ###############
+    self.logits_encoder = [
+      kl.Conv2D(filters=128,kernel_size=[3,3], 
+                            activation='relu' , padding='same',
+                            kernel_initializer='random_normal', name='logits_conv2d_1') ,
+      kl.BatchNormalization(name='logits_bn_1') ,
+      kl.Conv2D(filters=128,kernel_size=[3,3], 
+                            activation='relu' , padding='same',
+                            kernel_initializer='random_normal', name='logits_conv2d_2') ,
+      kl.BatchNormalization(name='logits_bn_2') ,
+      kl.Flatten(name='logits_flat_board') ,
+      kl.Dense( 512,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='logits_encoder' ) 
+    ]
+
+    ##### value network ###############
+    self.value_encoder = [
+      kl.Conv2D(filters=128,kernel_size=[3,3], 
+                            activation='relu' , padding='same',
+                            kernel_initializer='random_normal', name='value_conv2d_1') ,
+      kl.BatchNormalization(name='value_bn_1') ,
+      kl.Conv2D(filters=128,kernel_size=[3,3], 
+                            activation='relu' , padding='same',
+                            kernel_initializer='random_normal', name='value_conv2d_2') ,
+      kl.BatchNormalization(name='value_bn_2') ,
+      kl.Flatten(name='value_flat_board') ,
+      kl.Dense( 512,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='value_encoder' ) 
+    ]
+
+    ### value output
     self.value = kl.Dense(1, name='value')
     # Logits are unnormalized log probabilities.
     self.logits = kl.Dense(num_actions, name='policy_logits')
@@ -29,8 +64,17 @@ class A2CModel(tf.keras.Model):
     # Inputs is a numpy array, convert to a tensor.
     x = tf.convert_to_tensor(inputs)
     # Separate hidden layers from the same input tensor.
-    hidden_logs = self.hidden1(x)
-    hidden_vals = self.hidden2(x)
+    x = self.input_board(x)
+    x = self.common_encoder(x)
+
+    hidden_logs = x
+    for llayer in self.logits_encoder:
+      hidden_logs = llayer(hidden_logs)
+
+    hidden_vals = x
+    for llayer in self.value_encoder:
+      hidden_vals= llayer(hidden_vals)
+
     return self.logits(hidden_logs), self.value(hidden_vals)
 
   def action_value(self, obs):
