@@ -32,7 +32,8 @@ def debug_print(action, obs, reward, done):
   print('')
 
 class A2CAgent:
-  def __init__(self, model):
+
+  def __init__(self, model, summary_writer):
     # `gamma` is the discount factor; coefficients are used for the loss terms.
     self.gamma = gc.C_a2c_gamma
     self.value_c = gc.C_a2c_value_coeff
@@ -41,12 +42,13 @@ class A2CAgent:
     self.model = model
     self.model.compile(
       optimizer=ko.RMSprop(clipvalue=gc.C_a2c_clip_value  ,lr=gc.C_a2c_learning_rate),
+      # optimizer=ko.RMSprop(lr=gc.C_a2c_learning_rate),
       # Define separate losses for policy logits and value estimate.
       loss=[self._logits_loss, self._value_loss])
 
-    tmp_input = np.zeros( self.model.input_size )
-    self.model.action_value( tmp_input[None,:])
-    self.model.summary(print_fn=logging.info)
+    self.summary_writer = summary_writer
+
+
 
 
   def log_training(self, summary_writer, ep_rewards, losses, env, total_episode, total_update):
@@ -75,21 +77,17 @@ class A2CAgent:
           for weight in layer.trainable_weights:
             tf.summary.histogram('weights/{}'.format(layer.name), weight, step=total_episode)
 
-  def log_selected_action_histo(self, summary_writer, total_episode, action_history):
+  def log_selected_action_histo(self, summary_writer, avg_move_per_episode, total_episode, action_history):
     total = action_history.sum()
     with summary_writer.as_default():
+      tf.summary.scalar('move_per_episode', avg_move_per_episode, step=total_episode)
       for i in range(action_history.shape[0]):
         count = action_history[i]
         rate = count / total 
         tf.summary.scalar('actions/rate_{}'.format(i), rate , step=total_episode)
         tf.summary.scalar('actions/count_{}'.format(i), count , step=total_episode)
 
-  def train(self, env ):
-    current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-
-    log_dir = os.path.join( gc.C_a2c_save_model_base_folder, 'logs' , current_time)
-    checkpoint_path = os.path.join( gc.C_a2c_save_model_base_folder, 'checkpoint' , 'checkpoint')
-    summary_writer = tf.summary.create_file_writer(log_dir)
+  def train(self, env , checkpoint_path):
 
     total_update = 0
     update_period = gc.C_a2c_update_period 
@@ -102,7 +100,7 @@ class A2CAgent:
     observations = np.empty((batch_sz, env.state_size))
 
     for n in range(gc.C_a2c_training_size):
-      ep_rewards_list , losses , action_history = self.train_in_group(summary_writer, env, 
+      ep_rewards_list , losses , action_history = self.train_in_group(self.summary_writer, env, 
                                 actions, rewards, dones, values, observations,
                                  batch_sz, updates=update_period)
 
@@ -111,12 +109,13 @@ class A2CAgent:
 
       total_episode += n_episode
       total_update += update_period
-      avg_reward , avg_losses = self.log_training(summary_writer, ep_rewards, losses, env, total_episode, total_update)
-      self.log_weight_histo(summary_writer, total_episode)
-      self.log_selected_action_histo(summary_writer, total_episode, action_history)
+      avg_move_per_episode = action_history.sum() / n_episode 
+      avg_reward , avg_losses = self.log_training(self.summary_writer, ep_rewards, losses, env, total_episode, total_update)
+      self.log_weight_histo(self.summary_writer, total_episode)
+      self.log_selected_action_histo(self.summary_writer, avg_move_per_episode , total_episode, action_history)
 
-      logging.info('n: {}, Total episode: {}, update: {}, group avg reward: {:.2f}, losses : {:.2f},{:.2f},{:.2f}'.format(
-                  n, total_episode, total_update, avg_reward, avg_losses[0], avg_losses[1], avg_losses[2]))
+      logging.info('n: {}, Total episode: {}, update: {}, avg reward: {:.2f}, move {:.2f} losses : {:.2f},{:.2f},{:.2f}'.format(
+                  n, total_episode, total_update, avg_reward, avg_move_per_episode,  avg_losses[0], avg_losses[1], avg_losses[2]))
 
       if ( n %  gc.C_a2c_save_weight_period ) == 0:
         self.model.save_weights(checkpoint_path)
@@ -205,14 +204,17 @@ class A2CAgent:
     actions = tf.cast(actions, tf.int32)
 
     ### NOT SURE, but to ignore the case where advantages equal negative, which causing neg loss
-    adv2 = tf.where( advantages > 0 , advantages, 0)
+    # adv2 = tf.where( advantages > 0 , advantages, 0)
 
-    # policy_loss = weighted_sparse_ce(actions, logits, sample_weight=advantages)
-    policy_loss = weighted_sparse_ce(actions, logits, sample_weight=adv2)
+    policy_loss = weighted_sparse_ce(actions, logits, sample_weight=advantages)
+    # policy_loss = weighted_sparse_ce(actions, logits, sample_weight=adv2)
     # Entropy loss can be calculated as cross-entropy over itself.
     probs = tf.nn.softmax(logits)
     entropy_loss = kls.categorical_crossentropy(probs, probs)
     # We want to minimize policy and maximize entropy losses.
     # Here signs are flipped because the optimizer minimizes.
 
-    return policy_loss - self.entropy_c * entropy_loss
+    policy_loss2 = tf.where( policy_loss > 0 , policy_loss , tf.math.maximum( policy_loss , -10 ))
+
+    # return policy_loss - self.entropy_c * entropy_loss
+    return policy_loss2 - self.entropy_c * entropy_loss

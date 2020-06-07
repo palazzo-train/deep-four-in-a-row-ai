@@ -17,6 +17,81 @@ class ProbabilityDistribution(tf.keras.Model):
 class A2CModel(tf.keras.Model):
   input_size = ( NUM_ROW * NUM_COL * NUM_FEATURE_PLAN )
 
+  @tf.function
+  def call_arch4(self, inputs, **kwargs):
+    x = tf.convert_to_tensor(inputs)
+    # Separate hidden layers from the same input tensor.
+    # x = self.input_board(x)
+    # x = self.common_encoder(x)
+    # x = self.common_encoder2(x)
+    # x = self.common_encoder3(x)
+
+    hidden_logs = self.logits_encoder(x)
+    hidden_vals = self.value_encoder(x)
+
+    return self.logits(hidden_logs), self.value(hidden_vals)
+
+  def init_arch4(self, num_actions):
+    # self.input_board = kl.Reshape([NUM_ROW ,NUM_COL,NUM_FEATURE_PLAN] , name='board_input')
+
+    # self.common_encoder = kl.Conv2D(filters=32,kernel_size=[4,4], 
+    #                         activation='relu' , padding='same',
+    #                         kernel_initializer='glorot_normal', name='common_conv2d_1') 
+    # self.common_encoder2 = kl.Conv2D(filters=32,kernel_size=[4,4], 
+    #                         activation='relu' , padding='same',
+    #                         kernel_initializer='glorot_normal', name='common_conv2d_2') 
+    # self.common_encoder3 = kl.Flatten(name='common_flat')
+
+    ##### logits network ###############
+    self.logits_encoder = kl.Dense( 32,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='logits_encoder' ) 
+
+    ##### value network ###############
+    self.value_encoder = kl.Dense( 16,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='value_encoder' ) 
+
+    ### value output
+    self.value = kl.Dense(1, kernel_initializer='glorot_normal', activation='linear', name='value')
+    # Logits are unnormalized log probabilities.
+    self.logits = kl.Dense(num_actions, kernel_initializer='glorot_normal' , activation='linear', name='policy_logits')
+    self.dist = ProbabilityDistribution()
+
+  @tf.function
+  def call_arch3(self, inputs, **kwargs):
+    x = tf.convert_to_tensor(inputs)
+    # Separate hidden layers from the same input tensor.
+    x = self.input_board(x)
+    x = self.common_encoder(x)
+    x = self.common_encoder2(x)
+    x = self.common_encoder3(x)
+
+    hidden_logs = self.logits_encoder(x)
+    hidden_vals = self.value_encoder(x)
+
+    return self.logits(hidden_logs), self.value(hidden_vals)
+
+  def init_arch3(self, num_actions):
+    self.input_board = kl.Reshape([NUM_ROW ,NUM_COL,NUM_FEATURE_PLAN] , name='board_input')
+
+    self.common_encoder = kl.Conv2D(filters=32,kernel_size=[4,4], 
+                            activation='relu' , padding='same',
+                            kernel_initializer='glorot_normal', name='common_conv2d_1') 
+    self.common_encoder2 = kl.Conv2D(filters=32,kernel_size=[4,4], 
+                            activation='relu' , padding='same',
+                            kernel_initializer='glorot_normal', name='common_conv2d_2') 
+    self.common_encoder3 = kl.Flatten(name='common_flat')
+
+    ##### logits network ###############
+    self.logits_encoder = kl.Dense( 32,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='logits_encoder' ) 
+
+    ##### value network ###############
+    self.value_encoder = kl.Dense( 16,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='value_encoder' ) 
+
+    ### value output
+    self.value = kl.Dense(1, kernel_initializer='glorot_normal', activation='linear', name='value')
+    # Logits are unnormalized log probabilities.
+    self.logits = kl.Dense(num_actions, kernel_initializer='glorot_normal' , activation='linear', name='policy_logits')
+    self.dist = ProbabilityDistribution()
+
+  @tf.function
   def call_arch2(self, inputs, **kwargs):
     x = tf.convert_to_tensor(inputs)
     # Separate hidden layers from the same input tensor.
@@ -49,6 +124,7 @@ class A2CModel(tf.keras.Model):
     self.logits = kl.Dense(num_actions, name='policy_logits')
     self.dist = ProbabilityDistribution()
 
+  @tf.function
   def call_arch1(self, inputs, **kwargs):
     x = tf.convert_to_tensor(inputs)
     # Separate hidden layers from the same input tensor.
@@ -109,10 +185,12 @@ class A2CModel(tf.keras.Model):
   def __init__(self, num_actions):
     super().__init__('four_in_a_row_policy')
     # Note: no tf.get_variable(), just simple Keras API!
-    self.init_arch2(num_actions)
+    # self.init_arch2(num_actions)
+    self.init_arch4(num_actions)
 
   def call(self, inputs, **kwargs):
-    return self.call_arch2(inputs, **kwargs)
+    # return self.call_arch2(inputs, **kwargs)
+    return self.call_arch4(inputs, **kwargs)
 
   def action_value(self, obs):
     # Executes `call()` under the hood.

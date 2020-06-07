@@ -148,7 +148,8 @@ class GameEnv():
 
         self.winner = BLANK
 
-        self.history_logger = HistoryLogger(_n_row, _n_col, _n_slot_state)
+        # self.history_logger = HistoryLogger(_n_row, _n_col, _n_slot_state)
+        self.history_logger = None
 
     def __get_winning_masks(self):
         return _global_winning_masks.copy()
