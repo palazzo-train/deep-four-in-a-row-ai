@@ -96,12 +96,12 @@ class A2CAgent:
       total_update += update_period
       avg_reward = self.log_training(summary_writer, ep_rewards, losses, env, total_episode, total_update)
 
-      logging.info('Total episode: {}, update: {}, group avg reward: {:.2f}, losses : {:.2f},{:.2f},{:.2f}'.format(
-                  total_episode, total_update, avg_reward, losses[0], losses[1], losses[2]))
+      logging.info('n: {}, Total episode: {}, update: {}, group avg reward: {:.2f}, losses : {:.2f},{:.2f},{:.2f}'.format(
+                  n, total_episode, total_update, avg_reward, losses[0], losses[1], losses[2]))
 
       if ( n %  gc.C_a2c_save_weight_period ) == 0:
-        logging.info('saving weight to {}'.format(checkpoint_path))
         self.model.save_weights(checkpoint_path)
+        logging.info('    saved weight to {}'.format(checkpoint_path))
 
   def train_in_group(self, summary_writer, env, 
                       actions, rewards, dones, values, observations,
