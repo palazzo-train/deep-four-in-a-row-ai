@@ -40,7 +40,7 @@ class A2CAgent:
 
     self.model = model
     self.model.compile(
-      optimizer=ko.RMSprop(lr=gc.C_a2c_learning_rate),
+      optimizer=ko.RMSprop(clipvalue=gc.C_a2c_clip_value  ,lr=gc.C_a2c_learning_rate),
       # Define separate losses for policy logits and value estimate.
       loss=[self._logits_loss, self._value_loss])
 
@@ -54,17 +54,35 @@ class A2CAgent:
     num_loss = (ep_rewards == env.reward_player_loss ).sum()
     num_draw = (ep_rewards == env.reward_draw_game).sum()
     avg_reward = np.mean(ep_rewards)
+    avg_losses = losses.mean(axis=0)
     with summary_writer.as_default():
       tf.summary.scalar('episode reward', avg_reward, step=total_episode)
       tf.summary.scalar('num update', total_update, step=total_episode)
       tf.summary.scalar('game/win', num_win, step=total_episode)
       tf.summary.scalar('game/loss', num_loss, step=total_episode)
       tf.summary.scalar('game/draw', num_draw, step=total_episode)
-      tf.summary.scalar('loss/losses 0', losses[0], step=total_episode)
-      tf.summary.scalar('loss/losses 1', losses[1], step=total_episode)
-      tf.summary.scalar('loss/losses 2', losses[2], step=total_episode)
+      tf.summary.scalar('loss/losses 0', avg_losses[0], step=total_episode)
+      tf.summary.scalar('loss/losses 1', avg_losses[1], step=total_episode)
+      tf.summary.scalar('loss/losses 2', avg_losses[2], step=total_episode)
 
-    return avg_reward
+    return avg_reward, avg_losses
+
+  def log_weight_histo(self, summary_writer, total_episode ):
+
+    with summary_writer.as_default():
+      for layer in self.model.layers:
+        if layer.trainable:
+          for weight in layer.trainable_weights:
+            tf.summary.histogram('weights/{}'.format(layer.name), weight, step=total_episode)
+
+  def log_selected_action_histo(self, summary_writer, total_episode, action_history):
+    total = action_history.sum()
+    with summary_writer.as_default():
+      for i in range(action_history.shape[0]):
+        count = action_history[i]
+        rate = count / total 
+        tf.summary.scalar('actions/rate_{}'.format(i), rate , step=total_episode)
+        tf.summary.scalar('actions/count_{}'.format(i), count , step=total_episode)
 
   def train(self, env ):
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -84,8 +102,7 @@ class A2CAgent:
     observations = np.empty((batch_sz, env.state_size))
 
     for n in range(gc.C_a2c_training_size):
-
-      ep_rewards_list , losses = self.train_in_group(summary_writer, env, 
+      ep_rewards_list , losses , action_history = self.train_in_group(summary_writer, env, 
                                 actions, rewards, dones, values, observations,
                                  batch_sz, updates=update_period)
 
@@ -94,10 +111,12 @@ class A2CAgent:
 
       total_episode += n_episode
       total_update += update_period
-      avg_reward = self.log_training(summary_writer, ep_rewards, losses, env, total_episode, total_update)
+      avg_reward , avg_losses = self.log_training(summary_writer, ep_rewards, losses, env, total_episode, total_update)
+      self.log_weight_histo(summary_writer, total_episode)
+      self.log_selected_action_histo(summary_writer, total_episode, action_history)
 
       logging.info('n: {}, Total episode: {}, update: {}, group avg reward: {:.2f}, losses : {:.2f},{:.2f},{:.2f}'.format(
-                  n, total_episode, total_update, avg_reward, losses[0], losses[1], losses[2]))
+                  n, total_episode, total_update, avg_reward, avg_losses[0], avg_losses[1], avg_losses[2]))
 
       if ( n %  gc.C_a2c_save_weight_period ) == 0:
         self.model.save_weights(checkpoint_path)
@@ -111,11 +130,16 @@ class A2CAgent:
     # Training loop: collect samples, send to optimizer, repeat updates times.
     ep_rewards = [0.0]
     next_obs = env.reset()
+    list_losses = []
+
+    action_history = np.zeros( NUM_COL )
 
     for update in range(updates):
       for step in range(batch_sz):
         observations[step] = next_obs.copy()
         actions[step], values[step] = self.model.action_value(next_obs[None, :])
+
+        action_history[ actions[step]] += 1
 
         next_obs, reward, done, _ = env.step( actions[step]  )
         # debug_print(actions[step], observations[step], reward, done)
@@ -136,10 +160,13 @@ class A2CAgent:
       # Performs a full training step on the collected batch.
       # Note: no need to mess around with gradients, Keras API handles it.
 
-      losses = self.model.train_on_batch(observations, [acts_and_advs, returns])
+      batch_losses = self.model.train_on_batch(observations, [acts_and_advs, returns])
+      list_losses.append( batch_losses )
       # logging.info("[%d/%d] Losses: %s" % (update + 1, updates, losses))
 
-    return ep_rewards, losses
+    losses = np.array(list_losses)
+
+    return ep_rewards, losses,  action_history 
 
   def test(self, env):
     obs, done, ep_reward = env.reset(), False, 0
@@ -166,6 +193,7 @@ class A2CAgent:
     # Value loss is typically MSE between value estimates and returns.
     return self.value_c * kls.mean_squared_error(returns, value)
 
+  @tf.function
   def _logits_loss(self, actions_and_advantages, logits):
     # A trick to input actions and advantages through the same API.
     actions, advantages = tf.split(actions_and_advantages, 2, axis=-1)
@@ -175,10 +203,16 @@ class A2CAgent:
     # Policy loss is defined by policy gradients, weighted by advantages.
     # Note: we only calculate the loss on the actions we've actually taken.
     actions = tf.cast(actions, tf.int32)
-    policy_loss = weighted_sparse_ce(actions, logits, sample_weight=advantages)
+
+    ### NOT SURE, but to ignore the case where advantages equal negative, which causing neg loss
+    adv2 = tf.where( advantages > 0 , advantages, 0)
+
+    # policy_loss = weighted_sparse_ce(actions, logits, sample_weight=advantages)
+    policy_loss = weighted_sparse_ce(actions, logits, sample_weight=adv2)
     # Entropy loss can be calculated as cross-entropy over itself.
     probs = tf.nn.softmax(logits)
     entropy_loss = kls.categorical_crossentropy(probs, probs)
     # We want to minimize policy and maximize entropy losses.
     # Here signs are flipped because the optimizer minimizes.
+
     return policy_loss - self.entropy_c * entropy_loss
