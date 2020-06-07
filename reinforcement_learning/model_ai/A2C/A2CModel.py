@@ -59,36 +59,67 @@ class A2CModel(tf.keras.Model):
     x = tf.convert_to_tensor(inputs)
     # Separate hidden layers from the same input tensor.
     x = self.input_board(x)
-    x = self.common_encoder(x)
-    x = self.common_encoder2(x)
-    x = self.common_encoder3(x)
 
-    hidden_logs = self.logits_encoder(x)
-    hidden_vals = self.value_encoder(x)
+    for cl in self.common_encoder :
+      x = cl(x)
+
+    hidden_logs = x
+    for cl in self.logits_encoders:
+      hidden_logs = cl(hidden_logs)
+
+    hidden_vals = x
+    for cl in self.value_encoders:
+      hidden_vals = cl(hidden_vals)
 
     return self.logits(hidden_logs), self.value(hidden_vals)
 
   def init_arch3(self, num_actions):
     self.input_board = kl.Reshape([NUM_ROW ,NUM_COL,NUM_FEATURE_PLAN] , name='board_input')
 
-    self.common_encoder = kl.Conv2D(filters=32,kernel_size=[4,4], 
+    self.common_encoder = [
+                        kl.Conv2D(filters=48,kernel_size=[4,4], 
                             activation='relu' , padding='same',
-                            kernel_initializer='glorot_normal', name='common_conv2d_1') 
-    self.common_encoder2 = kl.Conv2D(filters=32,kernel_size=[4,4], 
-                            activation='relu' , padding='same',
-                            kernel_initializer='glorot_normal', name='common_conv2d_2') 
-    self.common_encoder3 = kl.Flatten(name='common_flat')
+                            kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) ,
+                            kernel_initializer='glorot_uniform', name='common_conv2d_1') ,
+                        kl.BatchNormalization(name='common_bn_1') ,
+                        kl.Conv2D(filters=56,kernel_size=[3,3], 
+                            activation='relu' , padding='valid',
+                            kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) ,
+                            kernel_initializer='glorot_uniform', name='common_conv2d_2') ,
+                        kl.BatchNormalization(name='common_bn_2') ,
+                        kl.Conv2D(filters=64,kernel_size=[3,3], 
+                            activation='relu' , padding='valid',
+                            kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) ,
+                            kernel_initializer='glorot_uniform', name='common_conv2d_3') ,
+                        kl.BatchNormalization(name='common_bn_3') ,
+                        kl.Flatten(name='common_flat'),
+                        kl.Dropout( rate = 0.25, name='logits_dropout1'),
+    ]
 
     ##### logits network ###############
-    self.logits_encoder = kl.Dense( 32,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='logits_encoder' ) 
+    self.logits_encoders = [ kl.Dense( 48,  activation='relu', kernel_initializer='glorot_normal' , name='logits_encoder1' ,
+                                      kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) ),
+                             kl.Dropout( rate = 0.4, name='logits_dropout1'),
+                             kl.Dense( 32,  activation='relu', kernel_initializer='glorot_normal' , name='logits_encoder2' ,
+                                      kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) ),
+                             kl.Dropout( rate = 0.4, name='logits_dropout2'),
+    ]
 
     ##### value network ###############
-    self.value_encoder = kl.Dense( 16,  activation='relu', kernel_initializer= tf.keras.initializers.GlorotNormal() , name='value_encoder' ) 
+    self.value_encoders = [ kl.Dense( 24,  activation='relu', kernel_initializer='glorot_normal' , name='value_encoder1' ,
+                                      kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) ),
+                            kl.Dropout( rate = 0.4, name='value_dropout1'),
+                            kl.Dense( 16,  activation='relu', kernel_initializer='glorot_normal' , name='value_encoder2' ,
+                                      kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) ),
+                            kl.Dropout( rate = 0.4, name='value_dropout2'),
+    ]
 
     ### value output
-    self.value = kl.Dense(1, kernel_initializer='glorot_normal', activation='linear', name='value')
+    self.value = kl.Dense(1, kernel_initializer='glorot_normal', activation='linear', name='value_out',
+                          kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) )
     # Logits are unnormalized log probabilities.
-    self.logits = kl.Dense(num_actions, kernel_initializer='glorot_normal' , activation='linear', name='policy_logits')
+    self.logits = kl.Dense(num_actions, kernel_initializer='glorot_normal' , activation='linear', name='policy_logits',
+                          kernel_regularizer=tf.keras.regularizers.l1_l2(l1=0.01, l2=0.01) )
     self.dist = ProbabilityDistribution()
 
   @tf.function
@@ -186,11 +217,11 @@ class A2CModel(tf.keras.Model):
     super().__init__('four_in_a_row_policy')
     # Note: no tf.get_variable(), just simple Keras API!
     # self.init_arch2(num_actions)
-    self.init_arch4(num_actions)
+    self.init_arch3(num_actions)
 
   def call(self, inputs, **kwargs):
     # return self.call_arch2(inputs, **kwargs)
-    return self.call_arch4(inputs, **kwargs)
+    return self.call_arch3(inputs, **kwargs)
 
   def action_value(self, obs):
     # Executes `call()` under the hood.
