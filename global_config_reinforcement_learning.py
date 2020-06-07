@@ -3,7 +3,7 @@
 ### A2C environment
 C_a2c_resume_training = True 
 C_a2c_save_model_base_folder = 'project_data/a2c'
-C_a2c_training_size = 200
+C_a2c_training_size = 800000
 C_a2c_update_period = 20
 C_a2c_save_weight_period = 20
 C_a2c_batch_size = 48
