@@ -1,7 +1,7 @@
 
 
 ### A2C environment
-C_a2c_resume_training = True 
+C_a2c_resume_training = False 
 C_a2c_save_model_base_folder = 'project_data/a2c'
 C_a2c_training_size = 800000
 C_a2c_update_period = 20
@@ -12,7 +12,7 @@ C_a2c_gamma = 0.9
 C_a2c_value_coeff = 0.5
 C_a2c_entropy_coeff = 1e-4
 C_a2c_clip_value = 0.8
-
+C_a2c_regularizer_l2 = 0.005
 
 
 ###  running mode
