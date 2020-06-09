@@ -1,6 +1,6 @@
 import numpy as np
 from . import game_env as ge
-from .game_env import RED, GREEN , BLANK, GREEN_INDEX , RED_INDEX , BLANK_INDEX 
+from .game_env import RED, GREEN , BLANK, GREEN_INDEX , RED_INDEX , BLANK_INDEX , NUM_IN_A_ROW 
 from . import random_robot_players as rp
 import game_env.feature_plans as fp
 
@@ -26,9 +26,13 @@ class Env():
 
     reward_invalid = -2
     reward_valid_move = 0
-    reward_player_win = 1
     reward_draw_game = 0.5
-    reward_player_loss = -1
+
+    def reward_player_win(self):
+        return self.reward_draw_game + (NUM_IN_A_ROW / self.n_step)/2
+
+    def reward_player_loss(self):
+        return - ( NUM_IN_A_ROW / self.n_step)
 
 
     def __init__(self, robot_level=-1):
@@ -69,9 +73,11 @@ class Env():
             reward = self.reward_invalid 
             return self.step_return_value(game_end, reward, valid_move, player_won, robot_won)
 
+        self.n_step += 1
+
         if game_end: 
             if player_won:
-                reward = self.reward_player_win 
+                reward = self.reward_player_win()
             else:
                 ### draw
                 reward = self.reward_draw_game
@@ -82,7 +88,7 @@ class Env():
 
         reward = self.reward_valid_move
         if game_end and robot_won:
-            reward = self.reward_player_loss 
+            reward = self.reward_player_loss()
 
         return self.step_return_value(game_end, reward, valid_move, player_won, robot_won)
 
@@ -99,6 +105,7 @@ class Env():
         return self._get_state(), self.player_color_index
 
     def reset(self):
+        self.n_step = 0
         self.game.reset()
 
         self.player_color_index = int(np.random.choice(2))
