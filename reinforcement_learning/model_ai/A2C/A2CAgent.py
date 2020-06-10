@@ -52,9 +52,9 @@ class A2CAgent:
 
 
   def log_training(self, summary_writer, ep_rewards, losses, env, total_episode, total_update):
-    num_win = (ep_rewards == env.reward_player_win ).sum()
-    num_loss = (ep_rewards == env.reward_player_loss ).sum()
-    num_draw = (ep_rewards == env.reward_draw_game).sum()
+    num_win = (ep_rewards > 0.3 ).sum()
+    num_loss = (ep_rewards < 0).sum()
+    num_draw = (ep_rewards == 0.2 ).sum()
     avg_reward = np.mean(ep_rewards)
     avg_losses = losses.mean(axis=0)
     with summary_writer.as_default():

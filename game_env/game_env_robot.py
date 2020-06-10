@@ -26,10 +26,10 @@ class Env():
 
     reward_invalid = -2
     reward_valid_move = 0
-    reward_draw_game = 0.5
+    reward_draw_game = 0.2
 
     def reward_player_win(self):
-        return self.reward_draw_game + (NUM_IN_A_ROW / self.n_step)/2
+        return 0.5 + (NUM_IN_A_ROW / self.n_step)/2
 
     def reward_player_loss(self):
         return - ( NUM_IN_A_ROW / self.n_step)
