@@ -74,13 +74,13 @@ class A2CAgent:
       tf.summary.scalar('loss/losses 2', avg_losses[2], step=total_episode)
 
     with self.summary_game_results[0].as_default():
-      tf.summary.scalar('game/count', num_win, step=total_episode)
+      tf.summary.scalar('game/results', num_win, step=total_episode)
       tf.summary.scalar('game/win', num_win, step=total_episode)
     with self.summary_game_results[1].as_default():
-      tf.summary.scalar('game/count', num_draw, step=total_episode)
+      tf.summary.scalar('game/results', num_draw, step=total_episode)
       tf.summary.scalar('game/draw', num_draw, step=total_episode)
     with self.summary_game_results[2].as_default():
-      tf.summary.scalar('game/count', num_loss, step=total_episode)
+      tf.summary.scalar('game/results', num_loss, step=total_episode)
       tf.summary.scalar('game/loss', num_loss, step=total_episode)
 
     return avg_reward, avg_losses
