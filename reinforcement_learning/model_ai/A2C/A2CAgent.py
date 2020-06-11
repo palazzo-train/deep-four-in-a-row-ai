@@ -110,12 +110,17 @@ class A2CAgent:
     with self.summary_game_results[0].as_default():
       tf.summary.scalar('game/results', num_win, step=total_episode)
       tf.summary.scalar('game/win_count', num_win, step=total_episode)
+      tf.summary.histogram('game/win_step_dist', win_game_infos[:,3], step=total_episode)
+
     with self.summary_game_results[1].as_default():
       tf.summary.scalar('game/results', num_draw, step=total_episode)
       tf.summary.scalar('game/draw_count', num_draw, step=total_episode)
+      tf.summary.histogram('game/draw_step_dist', draw_game_infos[:,3], step=total_episode)
+
     with self.summary_game_results[2].as_default():
       tf.summary.scalar('game/results', num_loss, step=total_episode)
       tf.summary.scalar('game/loss_count', num_loss, step=total_episode)
+      tf.summary.histogram('game/loss_step_dist', loss_game_infos[:,3], step=total_episode)
 
     # min
     with self.summary_game_moves[0].as_default():
