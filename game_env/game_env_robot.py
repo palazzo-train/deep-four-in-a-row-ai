@@ -107,7 +107,9 @@ class Env():
         done = game_end
         info = { 'valid_move' : valid_move , 
                   'player_won' : player_won ,
-                  'robot_won' : robot_won }
+                  'robot_won' : robot_won ,
+                  'step' : self.n_step
+                  }
 
         return observation, reward, done, info 
 
@@ -188,7 +190,9 @@ class GymEnv(Env):
         done = game_end
         info = { 'valid_move' : valid_move , 
                   'player_won' : player_won ,
-                  'robot_won' : robot_won }
+                  'robot_won' : robot_won ,
+                  'step' : self.n_step
+                  }
 
         return observation, reward, done, info 
 

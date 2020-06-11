@@ -56,13 +56,88 @@ class A2CAgent:
     self.summary_game_results.append( tf.summary.create_file_writer(os.path.join(log_dir, 'game/draw' ) ) )
     self.summary_game_results.append( tf.summary.create_file_writer(os.path.join(log_dir, 'game/loss' ) ) )
 
+    self.summary_game_moves = []
+    self.summary_game_moves.append( tf.summary.create_file_writer(os.path.join(log_dir, 'game/min_move' ) ) )
+    self.summary_game_moves.append( tf.summary.create_file_writer(os.path.join(log_dir, 'game/avg_move' ) ) )
+    self.summary_game_moves.append( tf.summary.create_file_writer(os.path.join(log_dir, 'game/max_move' ) ) )
 
 
-  def log_training(self, summary_writer, ep_rewards, losses, env, total_episode, total_update, game_infos):
+
+  def log_game_results(self, total_episode, game_infos):
     game_sum = game_infos.sum(axis=0)
+    mean_step = game_infos[:,3].mean()
+
+    ### win analysis
     num_win = game_sum[0]
+    win_game_infos = game_infos[ game_infos[:,0] == 1, :]
+    if win_game_infos.shape[0] > 0:
+      win_mean_step = win_game_infos[:,3].mean()
+      win_min_step = win_game_infos[:,3].min()
+      win_max_step = win_game_infos[:,3].max()
+    else:
+      win_mean_step = 0
+      win_min_step = 0
+      win_max_step = 0
+
+    ## draw
     num_draw = game_sum[1]
+    draw_game_infos = game_infos[ game_infos[:,1] == 1, :]
+    if draw_game_infos.shape[0] > 0:
+      draw_mean_step = draw_game_infos[:,3].mean()
+      draw_min_step = draw_game_infos[:,3].min()
+      draw_max_step = draw_game_infos[:,3].max()
+    else:
+      draw_mean_step = 0
+      draw_min_step = 0
+      draw_max_step = 0
+
+    ### loss
     num_loss = game_sum[2]
+    loss_game_infos = game_infos[ game_infos[:,2] == 1, :]
+    if loss_game_infos.shape[0] > 0:
+      loss_mean_step = loss_game_infos[:,3].mean()
+      loss_min_step = loss_game_infos[:,3].min()
+      loss_max_step = loss_game_infos[:,3].max()
+    else:
+      loss_mean_step = 0
+      loss_min_step = 0
+      loss_max_step = 0
+
+
+    with self.summary_writer.as_default():
+      tf.summary.scalar('game/win_loss_diff', num_win - num_loss, step=total_episode)
+
+    with self.summary_game_results[0].as_default():
+      tf.summary.scalar('game/results', num_win, step=total_episode)
+      tf.summary.scalar('game/win_count', num_win, step=total_episode)
+    with self.summary_game_results[1].as_default():
+      tf.summary.scalar('game/results', num_draw, step=total_episode)
+      tf.summary.scalar('game/draw_count', num_draw, step=total_episode)
+    with self.summary_game_results[2].as_default():
+      tf.summary.scalar('game/results', num_loss, step=total_episode)
+      tf.summary.scalar('game/loss_count', num_loss, step=total_episode)
+
+    # min
+    with self.summary_game_moves[0].as_default():
+      tf.summary.scalar('game/win_game_step', win_min_step, step=total_episode)
+      tf.summary.scalar('game/draw_game_step', draw_min_step, step=total_episode)
+      tf.summary.scalar('game/loss_game_step', loss_min_step, step=total_episode)
+
+    # mean
+    with self.summary_game_moves[1].as_default():
+      tf.summary.scalar('game/win_game_step', win_mean_step, step=total_episode)
+      tf.summary.scalar('game/draw_game_step', draw_mean_step, step=total_episode)
+      tf.summary.scalar('game/loss_game_step', loss_mean_step, step=total_episode)
+
+    # max
+    with self.summary_game_moves[2].as_default():
+      tf.summary.scalar('game/win_game_step', win_max_step, step=total_episode)
+      tf.summary.scalar('game/draw_game_step', draw_max_step, step=total_episode)
+      tf.summary.scalar('game/loss_game_step', loss_max_step, step=total_episode)
+
+    return num_win, num_draw, num_loss, mean_step
+
+  def log_training(self, summary_writer, ep_rewards, losses, total_episode, total_update):
 
     avg_reward = np.mean(ep_rewards)
     avg_losses = losses.mean(axis=0)
@@ -73,15 +148,6 @@ class A2CAgent:
       tf.summary.scalar('loss/losses 1', avg_losses[1], step=total_episode)
       tf.summary.scalar('loss/losses 2', avg_losses[2], step=total_episode)
 
-    with self.summary_game_results[0].as_default():
-      tf.summary.scalar('game/results', num_win, step=total_episode)
-      tf.summary.scalar('game/win', num_win, step=total_episode)
-    with self.summary_game_results[1].as_default():
-      tf.summary.scalar('game/results', num_draw, step=total_episode)
-      tf.summary.scalar('game/draw', num_draw, step=total_episode)
-    with self.summary_game_results[2].as_default():
-      tf.summary.scalar('game/results', num_loss, step=total_episode)
-      tf.summary.scalar('game/loss', num_loss, step=total_episode)
 
     return avg_reward, avg_losses
 
@@ -93,11 +159,20 @@ class A2CAgent:
           for weight in layer.trainable_weights:
             tf.summary.histogram('weights/{}'.format(layer.name), weight, step=total_episode)
 
-  def log_selected_action_histo(self, summary_writer, avg_move_per_episode, total_episode, action_history):
+  def log_selected_action_histo(self, summary_writer, total_episode, 
+                                action_history, game_infos):
     total = action_history.sum()
 
-    with summary_writer.as_default():
-      tf.summary.scalar('game/move_per_episode', avg_move_per_episode, step=total_episode)
+    mean_step = game_infos[:,3].mean()
+    max_step = game_infos[:,3].max()
+    min_step = game_infos[:,3].min()
+
+    with self.summary_game_moves[0].as_default():
+      tf.summary.scalar('game/move_per_episode', min_step, step=total_episode)
+    with self.summary_game_moves[1].as_default():
+      tf.summary.scalar('game/move_per_episode', mean_step, step=total_episode)
+    with self.summary_game_moves[2].as_default():
+      tf.summary.scalar('game/move_per_episode', max_step, step=total_episode)
 
     for i in range(action_history.shape[0]):
       count = action_history[i]
@@ -120,22 +195,26 @@ class A2CAgent:
     observations = np.empty((batch_sz, env.state_size))
 
     for n in range(gc.C_a2c_training_size):
-      ep_rewards_list , losses , action_history , game_infos = self.train_in_group(self.summary_writer, env, 
+      ep_rewards, losses, action_history, game_infos = self.train_in_group(self.summary_writer, 
+                                env, 
                                 actions, rewards, dones, values, observations,
-                                 batch_sz, updates=update_period)
+                                batch_sz, updates=update_period)
 
-      ep_rewards = np.array(ep_rewards_list)
       n_episode = ep_rewards.shape[0]
 
       total_episode += n_episode
       total_update += update_period
-      avg_move_per_episode = action_history.sum() / n_episode 
-      avg_reward , avg_losses = self.log_training(self.summary_writer, ep_rewards, losses, env, total_episode, total_update, game_infos)
-      self.log_weight_histo(self.summary_writer, total_episode)
-      self.log_selected_action_histo(self.summary_writer, avg_move_per_episode , total_episode, action_history)
 
-      logging.info('n: {}, Total episode: {}, update: {}, avg reward: {:.2f}, move {:.2f} losses : {:.2f},{:.2f},{:.2f}'.format(
-                  n, total_episode, total_update, avg_reward, avg_move_per_episode,  avg_losses[0], avg_losses[1], avg_losses[2]))
+      avg_reward , avg_losses = self.log_training(self.summary_writer, ep_rewards, losses, total_episode, total_update)
+      num_win, num_draw, num_loss , mean_step = self.log_game_results(total_episode, game_infos)
+
+      self.log_weight_histo(self.summary_writer, total_episode)
+      self.log_selected_action_histo(self.summary_writer, total_episode, action_history, game_infos )
+
+      logging.info('n: {}, episode: {}, upd: {}, reward: {:.2f}, move {:.2f} game (w,d,l): {},{},{} losses: {:.2f},{:.2f},{:.2f}'.format(
+                  n, total_episode, total_update, avg_reward, mean_step,  
+                  num_win, num_draw, num_loss,
+                  avg_losses[0], avg_losses[1], avg_losses[2]))
 
       if ( n %  gc.C_a2c_save_weight_period ) == 0:
         self.model.save_weights(checkpoint_path)
@@ -170,12 +249,13 @@ class A2CAgent:
 
         ep_rewards[-1] += rewards[step]
         if dones[step]:
+          step_used = info['step']
           player_won = info['player_won']
           robot_won = info['robot_won']
           player_draw = True if not player_won and not robot_won else False
           invalid_move = not info['valid_move']
 
-          game_infos.append( [ player_won, player_draw, robot_won, invalid_move ] )
+          game_infos.append( [ player_won, player_draw, robot_won, step_used, invalid_move ] )
           ep_rewards.append(0.0)
 
           next_obs = env.reset()
@@ -194,6 +274,7 @@ class A2CAgent:
 
     losses = np.array(list_losses)
     game_infos = np.array(game_infos)
+    ep_rewards = np.array(ep_rewards)
 
     return ep_rewards, losses,  action_history , game_infos
 
