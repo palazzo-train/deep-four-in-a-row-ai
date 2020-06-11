@@ -41,7 +41,7 @@ def train():
         logging.info('New training')
         logging.info('')
 
-    agent = A2CAgent(model , summary_writer)
+    agent = A2CAgent(model , summary_writer, log_dir)
     agent.train(env, checkpoint_path)
 
     logging.info("Finished training. Testing...")

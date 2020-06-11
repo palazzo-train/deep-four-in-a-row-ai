@@ -33,7 +33,7 @@ def debug_print(action, obs, reward, done):
 
 class A2CAgent:
 
-  def __init__(self, model, summary_writer):
+  def __init__(self, model, summary_writer, log_dir):
     # `gamma` is the discount factor; coefficients are used for the loss terms.
     self.gamma = gc.C_a2c_gamma
     self.value_c = gc.C_a2c_value_coeff
@@ -47,25 +47,41 @@ class A2CAgent:
       loss=[self._logits_loss, self._value_loss])
 
     self.summary_writer = summary_writer
+    self.summary_action_writers = []
+    for i in range(NUM_COL):
+      self.summary_action_writers.append( tf.summary.create_file_writer(os.path.join(log_dir, 'action/action_{}'.format(i)) ))
+
+    self.summary_game_results = []
+    self.summary_game_results.append( tf.summary.create_file_writer(os.path.join(log_dir, 'game/win' ) ) )
+    self.summary_game_results.append( tf.summary.create_file_writer(os.path.join(log_dir, 'game/draw' ) ) )
+    self.summary_game_results.append( tf.summary.create_file_writer(os.path.join(log_dir, 'game/loss' ) ) )
 
 
 
+  def log_training(self, summary_writer, ep_rewards, losses, env, total_episode, total_update, game_infos):
+    game_sum = game_infos.sum(axis=0)
+    num_win = game_sum[0]
+    num_draw = game_sum[1]
+    num_loss = game_sum[2]
 
-  def log_training(self, summary_writer, ep_rewards, losses, env, total_episode, total_update):
-    num_win = (ep_rewards > 0.3 ).sum()
-    num_loss = (ep_rewards < 0).sum()
-    num_draw = (ep_rewards == 0.2 ).sum()
     avg_reward = np.mean(ep_rewards)
     avg_losses = losses.mean(axis=0)
     with summary_writer.as_default():
-      tf.summary.scalar('episode reward', avg_reward, step=total_episode)
+      tf.summary.scalar('game/episode reward', avg_reward, step=total_episode)
       tf.summary.scalar('num update', total_update, step=total_episode)
-      tf.summary.scalar('game/win', num_win, step=total_episode)
-      tf.summary.scalar('game/loss', num_loss, step=total_episode)
-      tf.summary.scalar('game/draw', num_draw, step=total_episode)
       tf.summary.scalar('loss/losses 0', avg_losses[0], step=total_episode)
       tf.summary.scalar('loss/losses 1', avg_losses[1], step=total_episode)
       tf.summary.scalar('loss/losses 2', avg_losses[2], step=total_episode)
+
+    with self.summary_game_results[0].as_default():
+      tf.summary.scalar('game/count', num_win, step=total_episode)
+      tf.summary.scalar('game/win', num_win, step=total_episode)
+    with self.summary_game_results[1].as_default():
+      tf.summary.scalar('game/count', num_draw, step=total_episode)
+      tf.summary.scalar('game/draw', num_draw, step=total_episode)
+    with self.summary_game_results[2].as_default():
+      tf.summary.scalar('game/count', num_loss, step=total_episode)
+      tf.summary.scalar('game/loss', num_loss, step=total_episode)
 
     return avg_reward, avg_losses
 
@@ -79,13 +95,17 @@ class A2CAgent:
 
   def log_selected_action_histo(self, summary_writer, avg_move_per_episode, total_episode, action_history):
     total = action_history.sum()
+
     with summary_writer.as_default():
-      tf.summary.scalar('move_per_episode', avg_move_per_episode, step=total_episode)
-      for i in range(action_history.shape[0]):
-        count = action_history[i]
-        rate = count / total 
-        tf.summary.scalar('actions/rate_{}'.format(i), rate , step=total_episode)
-        tf.summary.scalar('actions/count_{}'.format(i), count , step=total_episode)
+      tf.summary.scalar('game/move_per_episode', avg_move_per_episode, step=total_episode)
+
+    for i in range(action_history.shape[0]):
+      count = action_history[i]
+      rate = count / total 
+      with self.summary_action_writers[i].as_default():
+        tf.summary.scalar('action/acount_rate', rate , step=total_episode)
+        tf.summary.scalar('action/acount_count', count , step=total_episode)
+        tf.summary.scalar('action/acount_{}'.format(i), count , step=total_episode)
 
   def train(self, env , checkpoint_path):
 
@@ -100,7 +120,7 @@ class A2CAgent:
     observations = np.empty((batch_sz, env.state_size))
 
     for n in range(gc.C_a2c_training_size):
-      ep_rewards_list , losses , action_history = self.train_in_group(self.summary_writer, env, 
+      ep_rewards_list , losses , action_history , game_infos = self.train_in_group(self.summary_writer, env, 
                                 actions, rewards, dones, values, observations,
                                  batch_sz, updates=update_period)
 
@@ -110,7 +130,7 @@ class A2CAgent:
       total_episode += n_episode
       total_update += update_period
       avg_move_per_episode = action_history.sum() / n_episode 
-      avg_reward , avg_losses = self.log_training(self.summary_writer, ep_rewards, losses, env, total_episode, total_update)
+      avg_reward , avg_losses = self.log_training(self.summary_writer, ep_rewards, losses, env, total_episode, total_update, game_infos)
       self.log_weight_histo(self.summary_writer, total_episode)
       self.log_selected_action_histo(self.summary_writer, avg_move_per_episode , total_episode, action_history)
 
@@ -131,6 +151,9 @@ class A2CAgent:
     next_obs = env.reset()
     list_losses = []
 
+
+    game_infos = []
+
     action_history = np.zeros( NUM_COL )
 
     for update in range(updates):
@@ -140,13 +163,19 @@ class A2CAgent:
 
         action_history[ actions[step]] += 1
 
-        next_obs, reward, done, _ = env.step( actions[step]  )
+        next_obs, reward, done, info = env.step( actions[step]  )
         # debug_print(actions[step], observations[step], reward, done)
 
         rewards[step], dones[step] = reward, done
 
         ep_rewards[-1] += rewards[step]
         if dones[step]:
+          player_won = info['player_won']
+          robot_won = info['robot_won']
+          player_draw = True if not player_won and not robot_won else False
+          invalid_move = not info['valid_move']
+
+          game_infos.append( [ player_won, player_draw, robot_won, invalid_move ] )
           ep_rewards.append(0.0)
 
           next_obs = env.reset()
@@ -164,8 +193,9 @@ class A2CAgent:
       # logging.info("[%d/%d] Losses: %s" % (update + 1, updates, losses))
 
     losses = np.array(list_losses)
+    game_infos = np.array(game_infos)
 
-    return ep_rewards, losses,  action_history 
+    return ep_rewards, losses,  action_history , game_infos
 
   def test(self, env):
     obs, done, ep_reward = env.reset(), False, 0
