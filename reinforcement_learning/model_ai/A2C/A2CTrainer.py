@@ -20,6 +20,8 @@ def train():
     checkpoint_path = os.path.join( gc.C_a2c_save_model_base_folder, 'checkpoint' , 'checkpoint')
 
     model = A2CModel(num_actions=num_actions)
+
+
     tmp_input = np.zeros( model.input_size )
     model.action_value( tmp_input[None,:])
     model.summary(print_fn=logging.info)

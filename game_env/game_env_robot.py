@@ -25,14 +25,22 @@ class Env():
     state_size = ( ge.NUM_ROW * ge.NUM_COL * ge.NUM_COLOR_STATE ) + 2
 
     reward_invalid = -2
-    reward_valid_move = 0
+    reward_valid_move = 0.01
     reward_draw_game = 0.2
 
+    def prepare_rewards(self):
+        n = np.arange(1,23)
+
+        self.reward_win_game_by_step = np.zeros( 23 )
+        self.reward_win_game_by_step[1:] =  ( ge.NUM_IN_A_ROW / (n ** 0.3)) - 1.5
+        self.reward_loss_game_by_step = np.zeros( 23 )
+        self.reward_loss_game_by_step[1:] = -( ge.NUM_IN_A_ROW / (n ** 0.3)) + 1.5
+
     def reward_player_win(self):
-        return 0.5 + (NUM_IN_A_ROW / self.n_step)/2
+        return self.reward_win_game_by_step[self.n_step]
 
     def reward_player_loss(self):
-        return - ( NUM_IN_A_ROW / self.n_step)
+        return self.reward_loss_game_by_step[self.n_step]
 
 
     def __init__(self, robot_level=-1):
@@ -42,6 +50,8 @@ class Env():
         self.robots_inventry = { 
             GREEN_INDEX : rp.getRobots(GREEN,RED, self.robot_level),
             RED_INDEX : rp.getRobots(RED,GREEN, self.robot_level) }
+
+        self.prepare_rewards()
 
         self.reset()
 
