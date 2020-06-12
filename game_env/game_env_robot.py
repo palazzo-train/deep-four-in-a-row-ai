@@ -32,7 +32,7 @@ class Env():
         n = np.arange(1,23)
 
         self.reward_win_game_by_step = np.zeros( 23 )
-        self.reward_win_game_by_step[1:] =  ( ge.NUM_IN_A_ROW / (n ** 0.3)) - 1.5
+        self.reward_win_game_by_step[1:] =  ( ge.NUM_IN_A_ROW / (n ** 0.3)) - 1.5 + 0.25
         self.reward_loss_game_by_step = np.zeros( 23 )
         self.reward_loss_game_by_step[1:] = -( ge.NUM_IN_A_ROW / (n ** 0.3)) + 1.5
 
