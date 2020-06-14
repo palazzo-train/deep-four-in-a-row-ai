@@ -45,9 +45,6 @@ class Env():
         y_win = np.concatenate(([0,0,0],win_curve)) + n* 0.01 - 2.6
         y_loss = np.concatenate(([0,0],loss_curve,[0])) + n * 0.01 - 0.3
 
-        y_win = np.concatenate(([0,0,0],win_curve)) + n * self.reward_valid_move - 2.6
-        y_loss = np.concatenate(([0,0],loss_curve)) + n * self.reward_valid_move
-
         ### y_win shape = 30, y_loss shape = 30
         ### but we only use y_win [4,21] and y_loss [3,21]
         self.reward_win_game_by_step = y_win
