@@ -26,25 +26,29 @@ class Env():
 
     reward_invalid = -2
     reward_valid_move = 0.01
-    reward_draw_game = 0.2
+    reward_draw_game = 0.05
 
     def prepare_rewards(self):
         ## prepare the curve shape
+        ### heavily penalize low quality game loss (loss by few steps moved)
         n = np.arange(1,27)
 
         win_curve = np.zeros( 27 )
-        win_curve[1:] =  ( 4 / (n ** 0.08)) 
+        win_curve[1:] =  ( 4 / (n ** 0.1)) 
 
-        ### heavily penalize low quality game loss (loss by few steps moved)
         loss_curve = np.zeros( 27 )
         loss_curve[1:] = -( 4 / ((n) ** 1)) 
 
-        n=np.array(29)
+
+        n=np.arange(30)
+
+        y_win = np.concatenate(([0,0,0],win_curve)) + n* 0.01 - 2.6
+        y_loss = np.concatenate(([0,0],loss_curve,[0])) + n * 0.01 - 0.3
 
         y_win = np.concatenate(([0,0,0],win_curve)) + n * self.reward_valid_move - 2.6
         y_loss = np.concatenate(([0,0],loss_curve)) + n * self.reward_valid_move
 
-        ### y_win shape = 30, y_loss shape = 29
+        ### y_win shape = 30, y_loss shape = 30
         ### but we only use y_win [4,21] and y_loss [3,21]
         self.reward_win_game_by_step = y_win
         self.reward_loss_game_by_step = y_loss
