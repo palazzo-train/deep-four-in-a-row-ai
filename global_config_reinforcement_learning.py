@@ -7,10 +7,10 @@ C_a2c_training_size = 800000
 C_a2c_update_period = 40
 C_a2c_save_weight_period = 4
 C_a2c_batch_size = 92
-C_a2c_learning_rate=5e-3
+C_a2c_learning_rate=2e-4
 C_a2c_gamma = 0.98
 C_a2c_value_coeff = 0.5
-C_a2c_entropy_coeff = 1e-4
+C_a2c_entropy_coeff = 1e-3
 C_a2c_clip_value = 0.6
 C_a2c_regularizer_l2 = 0.006
 
