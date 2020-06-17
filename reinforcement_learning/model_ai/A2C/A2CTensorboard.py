@@ -96,6 +96,7 @@ class A2CTensorboard():
     return avg_reward, avg_losses
 
   def log_game_results(self, total_episode, game_infos):
+    n_episode = game_infos.shape[0]
     game_sum = game_infos.sum(axis=0)
     mean_step = game_infos[:,3].mean()
 
@@ -140,6 +141,7 @@ class A2CTensorboard():
       tf.summary.scalar('game/win_loss_diff', num_win - num_loss, step=total_episode)
 
     with self.summary_game_results[0].as_default():
+      tf.summary.scalar('game/win_rate', num_win / n_episode, step=total_episode)
       tf.summary.scalar('game/results', num_win, step=total_episode)
       tf.summary.scalar('game/win_count', num_win, step=total_episode)
       tf.summary.histogram('game/win_step_dist', win_game_infos[:,3], step=total_episode)
