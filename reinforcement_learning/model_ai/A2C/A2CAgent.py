@@ -42,7 +42,7 @@ class A2CAgent:
 
     self.model = model
     self.model.compile(
-      optimizer=ko.RMSprop(clipvalue=gc.C_a2c_clip_value  ,lr=gc.C_a2c_learning_rate),
+      optimizer=ko.RMSprop(clipnorm=gc.C_a2c_clip_norm, clipvalue=gc.C_a2c_clip_value  ,lr=gc.C_a2c_learning_rate),
       # optimizer=ko.RMSprop(lr=gc.C_a2c_learning_rate),
       # Define separate losses for policy logits and value estimate.
       loss=[self._logits_loss, self._value_loss])
